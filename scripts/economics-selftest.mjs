@@ -8,6 +8,12 @@ const admin = fs.readFileSync(new URL("../admin/admin.js", import.meta.url), "ut
 const api = fs.readFileSync(new URL("../functions/api/orders.js", import.meta.url), "utf8");
 const migration = fs.readFileSync(new URL("../supabase/migrations/20260803170000_order_economics_snapshots_delete_cascade.sql", import.meta.url), "utf8");
 const correctionMigration = fs.readFileSync(new URL("../supabase/migrations/20260902205215_correct_terminal_economics_price.sql", import.meta.url), "utf8");
+// Formatter-proof source checks: admin.js may be reformatted (e.g. Prettier line
+// wrapping, trailing commas) without behavior changes, so compare flattened text.
+const flattenSource = text => text.replace(/\s+/g, "").replace(/,([)\]}])/g, "$1");
+const adminFlat = flattenSource(admin);
+const adminHas = snippet => adminFlat.includes(flattenSource(snippet));
+const has = (text, snippet) => flattenSource(text).includes(flattenSource(snippet));
 let tests = 0;
 let assertions = 0;
 const ok = (value, message) => { assertions++; assert.ok(value, message); };
@@ -58,22 +64,22 @@ await test("lace cost uses a cumulative weighted average", () => {
   ];
   equal(weighted(expenses), 134 / 40);
   equal(3 * weighted(expenses), 10.05);
-  ok(admin.includes('getWeightedAverageUnitCost(expensesCache, "lace_piece")'));
-  ok(admin.includes("amount += rowAmount;\n    quantity += rowQuantity"));
+  ok(adminHas('getWeightedAverageUnitCost(expensesCache, "lace_piece")'));
+  ok(adminHas("amount += rowAmount;\n    quantity += rowQuantity"));
 });
 
 await test("invalid purchases are ignored and fallback waits for a loaded expense list", () => {
   equal(weighted([{ unitKind: "lace_piece", amount: -5, quantity: 2 }, { unitKind: "lace_piece", amount: 10, quantity: null }]), null);
-  ok(admin.includes("if (!Array.isArray(expensesCache)) return null;"));
-  ok(admin.includes("?? SHOP_ECONOMICS.laceCostPerPiece"));
-  ok(admin.includes('expensesCacheStatus = "error"'));
+  ok(adminHas("if (!Array.isArray(expensesCache)) return null;"));
+  ok(adminHas("?? SHOP_ECONOMICS.laceCostPerPiece"));
+  ok(adminHas('expensesCacheStatus = "error"'));
 });
 
 await test("special-order lace values are actual text rather than sentinels", () => {
-  ok(admin.includes("Special-order color…"));
-  ok(admin.includes('data-special-order-lace-color="true"'));
-  ok(admin.includes("replaceLaceSelectWithSpecialOrderInput"));
-  equal(admin.includes(">Custom color…</option>"), false);
+  ok(adminHas("Special-order color…"));
+  ok(adminHas('data-special-order-lace-color="true"'));
+  ok(adminHas("replaceLaceSelectWithSpecialOrderInput"));
+  equal(adminHas(">Custom color…</option>"), false);
   ok(api.includes("newPrimaryColor: cleanText(updated.primary_lace_color)"));
 });
 
@@ -85,12 +91,12 @@ await test("completed economics are durable, canonical, and backfilled once", ()
   ok(migration.includes("old.economics_snapshot is not null"));
   ok(/source.*backfill/.test(migration));
   ok(/economics_snapshot is null/.test(migration));
-  ok(admin.includes("getOrderEconomicsSnapshot(order)"));
-  ok(admin.includes("materialsFromEconomicsSnapshot(snapshot)"));
-  ok(admin.includes("getHistoricalOrderBasis(order)"));
-  ok(admin.includes("snapshot.phase_minutes?.[PALM_PAD_PHASE]"));
-  ok(admin.includes("snapshot.phase_minutes?.[LABOR_CUSTOM_PHASE]"));
-  ok(admin.includes("Number(snapshot.labor_minutes) || 0"));
+  ok(adminHas("getOrderEconomicsSnapshot(order)"));
+  ok(adminHas("materialsFromEconomicsSnapshot(snapshot)"));
+  ok(adminHas("getHistoricalOrderBasis(order)"));
+  ok(adminHas("snapshot.phase_minutes?.[PALM_PAD_PHASE]"));
+  ok(adminHas("snapshot.phase_minutes?.[LABOR_CUSTOM_PHASE]"));
+  ok(adminHas("Number(snapshot.labor_minutes) || 0"));
   ok(api.includes("economicsSnapshot: row.economics_snapshot || null"));
 });
 
@@ -143,9 +149,9 @@ await test("published service rows are the only rule-price authority", () => {
   equal(publishedSuggestion({ gloveType: "Fielders Glove", webType: "Modified Trapeze", services: ["Cleaning + Conditioning + Relacing"] }, services), 113);
   equal(publishedSuggestion({ gloveType: "Catchers Mitt", services: ["Relacing"] }, services), 93);
   equal(publishedSuggestion({ gloveType: "Fielders Glove", services: ["Cleaning + Conditioning", "Lace Repair", "ShockTec Air2Gel Palm Pad"], loopCount: 2 }, services), 189);
-  equal(admin.includes("SHOP_PRICING"), false);
+  equal(adminHas("SHOP_PRICING"), false);
   for (const key of ["standard_full_service", "full_relace", "clean_condition", "lace_repair", "palm_padding", "loop_replacement"]) {
-    ok(admin.includes(`"${key}"`), key);
+    ok(adminHas(`"${key}"`), key);
   }
 });
 
@@ -153,12 +159,12 @@ await test("New Order templates contain job shape only and preserve unrelated fi
   const templateBlock = admin.slice(admin.indexOf("const ORDER_TEMPLATES"), admin.indexOf("function applyOrderTemplate"));
   equal(/\bprice\s*:/.test(templateBlock), false);
   equal(/turnaroundDays/.test(templateBlock), false);
-  ok(admin.includes("getOrderTemplateLabel(t)"));
-  ok(admin.includes("getSuggestedPrice(getNewOrderPricingShape())"));
+  ok(adminHas("getOrderTemplateLabel(t)"));
+  ok(adminHas("getSuggestedPrice(getNewOrderPricingShape())"));
   equal(/editDateReceived[\s\S]{0,500}calDateKey/.test(admin.slice(admin.indexOf("function applyOrderTemplate"), admin.indexOf("document.addEventListener(\"change\"", admin.indexOf("function applyOrderTemplate")))), false);
-  ok(admin.includes("Loading published pricing…"));
-  ok(admin.includes("await warmPricingCache(true)"));
-  ok(admin.includes('e.target?.id === "editPriceQuoted"'));
+  ok(adminHas("Loading published pricing…"));
+  ok(adminHas("await warmPricingCache(true)"));
+  ok(adminHas('e.target?.id === "editPriceQuoted"'));
 });
 
 await test("manual order creation has structured Received delivery semantics", () => {
@@ -166,8 +172,8 @@ await test("manual order creation has structured Received delivery semantics", (
   ok(api.includes('status: "suppressed", reason: "Preview environment."'));
   ok(api.includes('delivery.email.status === "sent"'));
   ok(api.includes('delivery.sms.status === "sent"'));
-  ok(admin.includes("Customer notification issue:"));
-  ok(admin.includes("Customer notifications were suppressed in Preview."));
+  ok(adminHas("Customer notification issue:"));
+  ok(adminHas("Customer notifications were suppressed in Preview."));
 });
 
 console.log(`\n${tests} tests, ${assertions} assertions passed`);
