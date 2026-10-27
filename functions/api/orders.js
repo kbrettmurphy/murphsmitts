@@ -437,11 +437,11 @@ const ACTIONS = {
   },
   hideGalleryPhoto: {
     auth: "session", demo: "deny", handler: handleHideGalleryPhoto,
-    effects: ["storage:gallery:move"], bindings: { required: ["CORE"], optional: [] }
+    effects: ["storage:gallery:move", "db:gallery_photo_links:write"], bindings: { required: ["CORE"], optional: [] }
   },
   restoreGalleryPhoto: {
     auth: "session", demo: "deny", handler: handleRestoreGalleryPhoto,
-    effects: ["storage:gallery:move"], bindings: { required: ["CORE"], optional: [] }
+    effects: ["storage:gallery:move", "db:gallery_photo_links:write"], bindings: { required: ["CORE"], optional: [] }
   },
   deleteGalleryPhoto: {
     auth: "session", demo: "deny", handler: handleDeleteGalleryPhoto,
@@ -1440,7 +1440,8 @@ async function handleUploadGalleryPhoto({ env, body, jsonHeaders }) {
     return json({ ok: false, error: "Only image uploads are allowed." }, 200, jsonHeaders);
   }
   const thumbDataUrl = cleanText(body.thumbDataUrl);
-  const uploaded = await uploadGalleryPhoto(env, { section, filename, contentType, dataUrl, thumbDataUrl });
+  const hidden = body.hidden === true;
+  const uploaded = await uploadGalleryPhoto(env, { section, filename, contentType, dataUrl, thumbDataUrl, hidden });
   if (!uploaded.ok) {
     return json({ ok: false, error: "Gallery upload failed.", details: uploaded.error }, 200, jsonHeaders);
   }
@@ -2389,7 +2390,9 @@ async function handleSearchPublicGloves({ env, body, jsonHeaders }) {
   const terms = q.split(/\s+/).filter(Boolean);
   const gloves = [];
   const links = await fetchAllGalleryPhotoLinks(env);
-  const linkRows = (links.ok && Array.isArray(links.data)) ? links.data : [];
+  // Hidden photos stay on their order's tracking page but never in public search.
+  const linkRows = ((links.ok && Array.isArray(links.data)) ? links.data : [])
+    .filter(l => !String(l.photo_url || "").includes("/gallery/_hidden/"));
   const byOrder = new Map();
   const byGroup = new Map();
   // Cover-first URL list for an album, so the search tile uses the designated
@@ -5281,7 +5284,7 @@ function galleryThumbPath(photoPath) {
   return `_thumbs/${String(photoPath || "").replace(/^\/+/, "")}`;
 }
 
-async function uploadGalleryPhoto(env, { section, filename, contentType, dataUrl, thumbDataUrl }) {
+async function uploadGalleryPhoto(env, { section, filename, contentType, dataUrl, thumbDataUrl, hidden = false }) {
   try {
     const base64 = String(dataUrl || "").split(",").pop();
     if (!base64) {
@@ -5293,7 +5296,9 @@ async function uploadGalleryPhoto(env, { section, filename, contentType, dataUrl
     const cleanName = safeStorageName(filename).replace(/\.[a-z0-9]+$/i, "");
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     const safeSection = safeGallerySection(section);
-    const path = `${safeSection}/${stamp}-${cleanName}.${ext}`;
+    // Hidden uploads land where Hide would move them: out of the public
+    // gallery, still reachable by URL for the order's tracking page.
+    const path = `${hidden ? "_hidden/" : ""}${safeSection}/${stamp}-${cleanName}.${ext}`;
     const thumbPath = galleryThumbPath(path);
 
     // Thumbnail is best-effort and uploads in parallel with the photo: a
@@ -5376,10 +5381,9 @@ async function hideGalleryPhoto(env, photoPath) {
   const moved = await moveGalleryStorageObject(env, parsed.path, destinationPath);
   if (!moved.ok) return moved;
 
-  return {
-    ok: true,
-    photo: galleryPhotoFromPath(env, destinationPath, true)
-  };
+  const photo = galleryPhotoFromPath(env, destinationPath, true);
+  await repointGalleryPhotoLinks(env, parsed.name, photo);
+  return { ok: true, photo };
 }
 
 async function restoreGalleryPhoto(env, photoPath) {
@@ -5392,10 +5396,26 @@ async function restoreGalleryPhoto(env, photoPath) {
   const moved = await moveGalleryStorageObject(env, parsed.path, destinationPath);
   if (!moved.ok) return moved;
 
-  return {
-    ok: true,
-    photo: galleryPhotoFromPath(env, destinationPath, false)
-  };
+  const photo = galleryPhotoFromPath(env, destinationPath, false);
+  await repointGalleryPhotoLinks(env, parsed.name, photo);
+  return { ok: true, photo };
+}
+
+/* Hide/restore move the file, which changes its URL. Album links (order
+   tracking page, customer profile) store the URL, so follow the move. Match by
+   the unique timestamped filename to also repair links left stale by older
+   hides. Best-effort: a failed repoint never undoes the move. */
+async function repointGalleryPhotoLinks(env, name, photo) {
+  if (!name) return;
+  await supabaseFetch(
+    env,
+    `/rest/v1/gallery_photo_links?photo_url=like.${encodeURIComponent("*/" + name)}`,
+    {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ photo_url: photo.url, photo_path: photo.path })
+    }
+  );
 }
 
 async function deleteGalleryPhoto(env, photoPath) {

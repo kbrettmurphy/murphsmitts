@@ -1797,6 +1797,11 @@ await test("media, gallery, and lace uploads preserve storage-only behavior", as
       filename: " My Photo.PNG ", contentType: "image/png",
       dataUrl: "data:image/png;base64,QQ==", section: "not-a-section"
     }, "gallery", "/fielding-gloves/"],
+    // Hide-on-upload lands directly where Hide would move it.
+    ["uploadGalleryPhoto", {
+      filename: "lace-repair.jpg", contentType: "image/jpeg",
+      dataUrl: "data:image/jpeg;base64,QQ==", section: "vintage", hidden: true
+    }, "gallery", "/_hidden/vintage/"],
     ["uploadLacePhoto", {
       color: " Hot Pink!! ", filename: " Lace Photo.JPG ",
       contentType: "image/jpeg", dataUrl: "data:image/jpeg;base64,QQ=="
@@ -1879,6 +1884,17 @@ await test("gallery management preserves non-transactional request ordering", as
     const result = await invoke({
       body: { action, _token: owner, path },
       fetchMock(input, init, callNumber) {
+        // Call 3 repoints album links (tracking page) to the moved URL, matched
+        // by filename so stale links from older hides are repaired too.
+        if (callNumber === 3) {
+          ok(String(input).includes(`/rest/v1/gallery_photo_links?photo_url=like.${encodeURIComponent("*/a.jpg")}`));
+          equal(init.method, "PATCH");
+          deepEqual(JSON.parse(init.body), {
+            photo_url: `https://supabase.invalid/storage/v1/object/public/gallery/${destinationKey}`,
+            photo_path: destinationKey
+          });
+          return new Response(null, { status: 204 });
+        }
         ok(String(input).endsWith("/storage/v1/object/move"));
         // Call 2 mirrors the move onto the grid thumbnail at _thumbs/<path>.
         const thumb = callNumber === 2 ? "_thumbs/" : "";
@@ -1889,7 +1905,7 @@ await test("gallery management preserves non-transactional request ordering", as
       }
     });
     equal(result.json.ok, true);
-    equal(result.fetchCalls.length, 2);
+    equal(result.fetchCalls.length, 3);
   }
 });
 
@@ -2781,6 +2797,26 @@ await test("public glove search preserves threshold, all-term matching, cap, and
   ]);
   equal(JSON.stringify(result.json).includes("must-not-leak"), false);
   equal(result.json.source, "gallery");
+});
+
+await test("public glove search never returns photos hidden from the gallery", async () => {
+  const pub = "https://supabase.invalid/storage/v1/object/public/gallery";
+  const result = await invoke({
+    body: { action: "searchPublicGloves", q: "wilson" },
+    fetchMock: input => String(input).includes("/rest/v1/orders?")
+      ? jsonResponse([{
+          order_number: "0042", brand_model: "Wilson A2000", glove_type: "Infield",
+          web_type: "I-web", primary_lace_color: "Tan", secondary_lace_color: null,
+          custom_color_request: null, services_requested: "Relace"
+        }])
+      : jsonResponse([
+          { photo_url: `${pub}/fielding-gloves/shown.jpg`, order_number: "0042", is_cover: false },
+          { photo_url: `${pub}/_hidden/fielding-gloves/repair.jpg`, order_number: "0042", is_cover: true },
+          { photo_url: `${pub}/_hidden/vintage/shop.jpg`, order_number: null, brand_model: "Wilson Hidden" }
+        ])
+  });
+  equal(JSON.stringify(result.json).includes("/_hidden/"), false);
+  ok(JSON.stringify(result.json).includes("shown.jpg"));
 });
 
 await test("public glove search expands Heart of the Hide typing to HoH", async () => {

@@ -10013,7 +10013,12 @@ function wireOrderPhotoControls(order) {
 
     const selection = await chooseOrderGalleryUpload(order, addBtn);
     if (!selection) return;
-    await uploadOrderGalleryPhotos(order, selection.files, selection.section);
+    await uploadOrderGalleryPhotos(
+      order,
+      selection.files,
+      selection.section,
+      selection.hidden,
+    );
   });
 
   input?.addEventListener("change", async () => {
@@ -10317,6 +10322,10 @@ async function chooseOrderGalleryUpload(order, anchor) {
         <label for="orderGalleryFiles">Photos</label>
         <input id="orderGalleryFiles" type="file" accept="image/*" multiple>
         <p id="orderGalleryFileStatus" class="order-gallery-file-status">No photos selected.</p>
+        <label class="gallery-hide-upload-row">
+          <input id="orderGalleryHidden" type="checkbox">
+          <span>Hide from website gallery <span class="muted">(still shows on their tracking link)</span></span>
+        </label>
       </div>
     `,
     actions: [
@@ -10347,11 +10356,13 @@ async function chooseOrderGalleryUpload(order, anchor) {
     if (uploadBtn) uploadBtn.disabled = files.length === 0;
   });
 
+  const hiddenInput = root.querySelector("#orderGalleryHidden");
   const action = await choice;
-  return action === "upload" && files.length ? { files, section } : null;
+  const hidden = hiddenInput?.checked === true;
+  return action === "upload" && files.length ? { files, section, hidden } : null;
 }
 
-async function uploadOrderGalleryPhotos(order, files, section) {
+async function uploadOrderGalleryPhotos(order, files, section, hidden = false) {
   const addBtn = document.getElementById("orderPhotoAddBtn");
   const total = files.length;
   /* Resolve the order number from the passed order or the active detail order.
@@ -10384,6 +10395,7 @@ async function uploadOrderGalleryPhotos(order, files, section) {
         {
           action: "uploadGalleryPhoto",
           section,
+          hidden,
           filename: prepared.filename,
           contentType: prepared.contentType,
           dataUrl: prepared.dataUrl,
@@ -10419,7 +10431,7 @@ async function uploadOrderGalleryPhotos(order, files, section) {
     );
   } else if (linked) {
     setOrderPhotoStatus(
-      `${linked} photo${linked === 1 ? "" : "s"} added to Gallery and linked to #${orderNumber}.`,
+      `${linked} photo${linked === 1 ? "" : "s"} added to Gallery and linked to #${orderNumber}.${hidden ? " Hidden from the website gallery." : ""}`,
     );
   } else {
     setOrderPhotoStatus(failed[0] || "Gallery upload failed.");
@@ -15855,6 +15867,8 @@ function initUploadView() {
     const files = stagedFiles;
     const orderInput = document.getElementById("galleryUploadOrderInput");
     const linkOrderNumber = orderInput?.value.trim() || "";
+    const hiddenInput = document.getElementById("galleryUploadHiddenInput");
+    const hidden = hiddenInput?.checked === true;
     const section =
       sectionForLinkedOrder(linkOrderNumber) ||
       sectionSelect?.value ||
@@ -15898,6 +15912,7 @@ function initUploadView() {
           {
             action: "uploadGalleryPhoto",
             section,
+            hidden,
             filename: prepared.filename,
             contentType: prepared.contentType,
             dataUrl: prepared.dataUrl,
@@ -15962,12 +15977,15 @@ function initUploadView() {
 
     clearSelection();
     if (orderInput) orderInput.value = "";
+    if (hiddenInput) hiddenInput.checked = false;
     const linkNote = linkOrderNumber
       ? linkError
         ? ` Link failed: ${linkError}`
         : ` Linked ${linked} to order #${linkOrderNumber}.`
       : "";
-    status.textContent = `Uploaded ${uploaded} photo${uploaded === 1 ? "" : "s"} to the website gallery.${linkNote}`;
+    status.textContent = hidden
+      ? `Uploaded ${uploaded} hidden photo${uploaded === 1 ? "" : "s"} (not on the website gallery).${linkNote}`
+      : `Uploaded ${uploaded} photo${uploaded === 1 ? "" : "s"} to the website gallery.${linkNote}`;
     await loadGalleryManagerPhotos();
   });
 
