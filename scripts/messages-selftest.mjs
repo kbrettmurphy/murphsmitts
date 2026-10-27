@@ -4,6 +4,12 @@ import assert from "node:assert/strict";
 const admin = fs.readFileSync(new URL("../admin/admin.js", import.meta.url), "utf8");
 const adminCss = fs.readFileSync(new URL("../admin/admin.css", import.meta.url), "utf8");
 const adminHtml = fs.readFileSync(new URL("../admin/index.html", import.meta.url), "utf8");
+// Formatter-proof source checks: admin.js may be reformatted (e.g. Prettier line
+// wrapping, trailing commas) without behavior changes, so compare flattened text.
+const flattenSource = text => text.replace(/\s+/g, "").replace(/,([)\]}])/g, "$1");
+const adminFlat = flattenSource(admin);
+const adminHas = snippet => adminFlat.includes(flattenSource(snippet));
+const has = (text, snippet) => flattenSource(text).includes(flattenSource(snippet));
 
 let tests = 0;
 let assertions = 0;
@@ -19,46 +25,46 @@ await test("conversation context uses the standard Messages topbar", () => {
   ok(adminHtml.includes('id="messagesBackBtn" class="secondary messages-topbar-back"'));
   ok(adminHtml.includes('id="messagesTitle" class="topbar-title"'));
   ok(adminHtml.includes('id="msgThreadDeleteBtn" class="secondary topbar-icon-action messages-thread-delete"'));
-  const header = admin.match(/function setMessagesTopbar\([\s\S]*?\n\}/)?.[0] || "";
-  ok(header.includes('messagesTitle.textContent = inThread'));
-  ok(header.includes('messagesCount.textContent = parts.join(" · ")'));
-  ok(header.includes("msgThreadDeleteBtn.dataset.delThread"));
+  const header = admin.match(/function setMessagesTopbar\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(header, 'messagesTitle.textContent = inThread'));
+  ok(has(header, 'messagesCount.textContent = parts.join(" · ")'));
+  ok(has(header, "msgThreadDeleteBtn.dataset.delThread"));
   equal(admin.match(/<div class="msg-convo-head">/g)?.length || 0, 0);
 });
 
 await test("refreshes update only the open message stream", () => {
-  const refresh = admin.match(/async function refreshMessages\([\s\S]*?\n\}/)?.[0] || "";
-  ok(refresh.includes("refreshOpenMessageThread()"));
-  equal(refresh.includes("document.activeElement"), false);
-  const stream = admin.match(/function renderOpenMessageStream\([\s\S]*?\n\}/)?.[0] || "";
-  ok(stream.includes("const previousTop = convo.scrollTop"));
-  ok(stream.includes("forceBottom ? convo.scrollHeight : previousTop"));
-  ok(stream.includes("messageThreadPinned = forceBottom || isMessageThreadNearBottom(convo)"));
-  ok(admin.includes('messagesPanel.addEventListener("scroll"'));
-  ok(admin.includes('if (latest) latest.hidden = true'));
+  const refresh = admin.match(/async function refreshMessages\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(refresh, "refreshOpenMessageThread()"));
+  equal(has(refresh, "document.activeElement"), false);
+  const stream = admin.match(/function renderOpenMessageStream\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(stream, "const previousTop = convo.scrollTop"));
+  ok(has(stream, "forceBottom ? convo.scrollHeight : previousTop"));
+  ok(has(stream, "messageThreadPinned = forceBottom || isMessageThreadNearBottom(convo)"));
+  ok(adminHas('messagesPanel.addEventListener("scroll"'));
+  ok(adminHas('if (latest) latest.hidden = true'));
 });
 
 await test("messages show useful send state and timestamps", () => {
-  const bubbles = admin.match(/function buildMessageBubbles\([\s\S]*?\n\}/)?.[0] || "";
-  ok(bubbles.includes('m.state === "pending"'));
-  ok(bubbles.includes('m.state === "failed"'));
-  ok(bubbles.includes('formatConversationMessageTime(m.createdAt)'));
-  ok(bubbles.includes('<span class="msg-time">'));
-  const send = admin.match(/async function handleMessageReply\([\s\S]*?\n\}/)?.[0] || "";
-  ok(send.includes('id: optimisticId'));
-  ok(send.includes('state: "pending"'));
-  ok(send.includes('pending.state = "failed"'));
-  ok(send.includes("refreshOpenMessageThread()"));
+  const bubbles = admin.match(/function buildMessageBubbles\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(bubbles, 'm.state === "pending"'));
+  ok(has(bubbles, 'm.state === "failed"'));
+  ok(has(bubbles, 'formatConversationMessageTime(m.createdAt)'));
+  ok(has(bubbles, '<span class="msg-time">'));
+  const send = admin.match(/async function handleMessageReply\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(send, 'id: optimisticId'));
+  ok(has(send, 'state: "pending"'));
+  ok(has(send, 'pending.state = "failed"'));
+  ok(has(send, "refreshOpenMessageThread()"));
 });
 
 await test("composer behaves like a chat composer", () => {
-  const composer = admin.match(/function syncMessageComposer\([\s\S]*?\n\}/)?.[0] || "";
-  ok(composer.includes('input.style.height = "auto"'));
-  ok(composer.includes("Math.min(input.scrollHeight, 120)"));
-  ok(composer.includes("btn.disabled = messageSending"));
-  ok(admin.includes('e.target?.id !== "msgReplyInput" || e.key !== "Enter" || e.shiftKey'));
-  ok(admin.includes('window.matchMedia("(hover: hover) and (pointer: fine)")'));
-  ok(admin.includes('data-msg-latest hidden>New messages'));
+  const composer = admin.match(/function syncMessageComposer\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(composer, 'input.style.height = "auto"'));
+  ok(has(composer, "Math.min(input.scrollHeight, 120)"));
+  ok(has(composer, "btn.disabled = messageSending"));
+  ok(adminHas('e.target?.id !== "msgReplyInput" || e.key !== "Enter" || e.shiftKey'));
+  ok(adminHas('window.matchMedia("(hover: hover) and (pointer: fine)")'));
+  ok(adminHas('data-msg-latest hidden>New messages'));
 });
 
 await test("Messages v2 styling remains isolated to the inbox", () => {

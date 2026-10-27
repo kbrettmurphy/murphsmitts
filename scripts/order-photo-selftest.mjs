@@ -5,6 +5,12 @@ const admin = fs.readFileSync(new URL("../admin/admin.js", import.meta.url), "ut
 const api = fs.readFileSync(new URL("../functions/api/orders.js", import.meta.url), "utf8");
 const css = fs.readFileSync(new URL("../admin/admin.css", import.meta.url), "utf8");
 const html = fs.readFileSync(new URL("../admin/index.html", import.meta.url), "utf8");
+// Formatter-proof source checks: admin.js may be reformatted (e.g. Prettier line
+// wrapping, trailing commas) without behavior changes, so compare flattened text.
+const flattenSource = text => text.replace(/\s+/g, "").replace(/,([)\]}])/g, "$1");
+const adminFlat = flattenSource(admin);
+const adminHas = snippet => adminFlat.includes(flattenSource(snippet));
+const has = (text, snippet) => flattenSource(text).includes(flattenSource(snippet));
 let tests = 0;
 let assertions = 0;
 
@@ -32,11 +38,11 @@ function gallerySectionForGloveType(gloveType) {
 }
 
 await test("Add Photo offers private and gallery destinations", () => {
-  ok(admin.includes('title: "Add Photo"'));
-  ok(admin.includes('{ label: "Customer / Order Photo", value: "order" }'));
-  ok(admin.includes('{ label: "Gallery Photo", value: "gallery" }'));
-  ok(admin.includes('destination === "order"'));
-  ok(admin.includes('destination !== "gallery"'));
+  ok(adminHas('title: "Add Photo"'));
+  ok(adminHas('{ label: "Customer / Order Photo", value: "order" }'));
+  ok(adminHas('{ label: "Gallery Photo", value: "gallery" }'));
+  ok(adminHas('destination === "order"'));
+  ok(adminHas('destination !== "gallery"'));
 });
 
 await test("gallery section defaults from glove type", () => {
@@ -44,9 +50,9 @@ await test("gallery section defaults from glove type", () => {
   equal(gallerySectionForGloveType("Catchers Mitt"), "catchers-mitts");
   equal(gallerySectionForGloveType("First Base Mitt"), "first-base-mitts");
   equal(gallerySectionForGloveType(""), "fielding-gloves");
-  ok(admin.includes('document.getElementById("editGloveType")?.value || order.gloveType'));
-  ok(admin.includes("Object.entries(GALLERY_SECTION_LABELS)"));
-  ok(admin.includes('sectionSelect?.addEventListener("change"'));
+  ok(adminHas('document.getElementById("editGloveType")?.value || order.gloveType'));
+  ok(adminHas("Object.entries(GALLERY_SECTION_LABELS)"));
+  ok(adminHas('sectionSelect?.addEventListener("change"'));
 });
 
 await test("gallery uploads are linked to the current order", () => {
@@ -54,20 +60,20 @@ await test("gallery uploads are linked to the current order", () => {
     admin.indexOf("async function uploadOrderGalleryPhotos"),
     admin.indexOf("function mergeUpdatedOrder")
   );
-  ok(uploader.includes('action: "uploadGalleryPhoto"'));
-  ok(uploader.includes('action: "setGalleryPhotoOrder"'));
-  ok(uploader.includes("orderNumber"));
+  ok(has(uploader, 'action: "uploadGalleryPhoto"'));
+  ok(has(uploader, 'action: "setGalleryPhotoOrder"'));
+  ok(has(uploader, "orderNumber"));
   ok(uploader.indexOf('action: "uploadGalleryPhoto"') < uploader.indexOf('action: "setGalleryPhotoOrder"'));
-  ok(uploader.includes("added to Gallery and linked to #"));
+  ok(has(uploader, "added to Gallery and linked to #"));
 });
 
 await test("upload menus use the anchored body-level portal", () => {
-  ok(admin.includes("getBenchChoiceRoot"));
-  ok(admin.includes("document.body.appendChild(benchChoiceRoot)"));
-  ok(admin.includes("anchor,"));
+  ok(adminHas("getBenchChoiceRoot"));
+  ok(adminHas("document.body.appendChild(benchChoiceRoot)"));
+  ok(adminHas("anchor,"));
   ok(css.includes(".bench-choice-sheet.is-anchored"));
   ok(css.includes("position:fixed"));
-  equal(admin.includes('className = "order-gallery-bottom-sheet"'), false);
+  equal(adminHas('className = "order-gallery-bottom-sheet"'), false);
 });
 
 await test("gallery toolbar changes are vertical-only", () => {
@@ -83,26 +89,25 @@ await test("gallery toolbar changes are vertical-only", () => {
 
 await test("hidden gallery photos can be isolated and restored", () => {
   ok(html.includes('<option value="hidden">Hidden Photos</option>'));
-  ok(admin.includes('activeFilter === "hidden" ? photo.hidden : photo.section === activeFilter'));
-  ok(admin.includes('gallery-manager-item${photo.hidden ? " is-gallery-hidden" : ""}'));
-  equal(admin.includes('gallery-manager-item${photo.hidden ? " is-hidden" : ""}'), false);
-  ok(admin.includes('? "restoreGalleryPhoto"'));
+  ok(adminHas('activeFilter === "hidden" ? photo.hidden : photo.section === activeFilter'));
+  ok(adminHas('gallery-manager-item${photo.hidden ? " is-gallery-hidden" : ""}'));
+  equal(adminHas('gallery-manager-item${photo.hidden ? " is-hidden" : ""}'), false);
+  ok(adminHas('? "restoreGalleryPhoto"'));
 });
 
-await test("gallery manager uses cached transformed thumbnails", () => {
-  ok(admin.includes("function getGalleryManagerThumbnailUrl(photoUrl)"));
-  ok(admin.includes('"/storage/v1/render/image/public/gallery/"'));
-  ok(admin.includes('url.searchParams.set("width", "480")'));
-  ok(admin.includes('url.searchParams.set("quality", "72")'));
-  ok(admin.includes('url.searchParams.set("resize", "contain")'));
-  equal(admin.includes('url.searchParams.set("resize", "cover")'), false);
-  ok(admin.includes('getGalleryManagerThumbnailUrl(photo.url)'));
-  ok(admin.includes('data-gallery-thumb-src="${escapeAttr(getGalleryManagerThumbnailUrl(photo.url))}"'));
-  ok(admin.includes("function wireGalleryManagerThumbnails(root)"));
-  ok(admin.includes("const maxConcurrent = 4"));
-  ok(admin.includes("{ root: null, rootMargin"));
-  ok(admin.includes('rootMargin: "120px 0px"'));
-  ok(admin.includes("wireGalleryManagerThumbnails(list)"));
+await test("gallery manager uses pre-made _thumbs/ thumbnails", () => {
+  ok(adminHas("function getGalleryManagerThumbnailUrl(photoUrl)"));
+  // Thumbs are made at upload (_thumbs/<photo path>); Supabase on-the-fly image
+  // transforms aren't on the plan and rate-limit, so they must not come back.
+  ok(adminHas('url.pathname.replace(objectPrefix, `${objectPrefix}_thumbs/`)'));
+  equal(adminHas("/storage/v1/render/image/"), false);
+  ok(adminHas('getGalleryManagerThumbnailUrl(photo.url)'));
+  ok(adminHas('data-gallery-thumb-src="${escapeAttr(getGalleryManagerThumbnailUrl(photo.url))}"'));
+  ok(adminHas("function wireGalleryManagerThumbnails(root)"));
+  ok(adminHas("const maxConcurrent = 4"));
+  ok(adminHas("{ root: null, rootMargin"));
+  ok(adminHas('rootMargin: "120px 0px"'));
+  ok(adminHas("wireGalleryManagerThumbnails(list)"));
   ok(/\.gallery-manager-thumb img\{[\s\S]*?object-fit:contain;/.test(css));
 });
 
