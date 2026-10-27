@@ -40,6 +40,12 @@ const migration = fs.readFileSync(new URL("../supabase/migrations/20260731120000
 const resumeMigration = fs.readFileSync(new URL("../supabase/migrations/20260803120000_resume_labor_with_new_bench_work.sql", import.meta.url), "utf8");
 const admin = fs.readFileSync(new URL("../admin/admin.js", import.meta.url), "utf8");
 const adminCss = fs.readFileSync(new URL("../admin/admin.css", import.meta.url), "utf8");
+// Formatter-proof source checks: admin.js may be reformatted (e.g. Prettier line
+// wrapping, trailing commas) without behavior changes, so compare flattened text.
+const flattenSource = text => text.replace(/\s+/g, "").replace(/,([)\]}])/g, "$1");
+const adminFlat = flattenSource(admin);
+const adminHas = snippet => adminFlat.includes(flattenSource(snippet));
+const has = (text, snippet) => flattenSource(text).includes(flattenSource(snippet));
 
 await test("schema is additive and enforces the Bench Focus invariants", () => {
   ok(/create table if not exists public\.bench_work_sessions/.test(migration));
@@ -168,18 +174,19 @@ await test("Resume Existing Timer uses one atomic RPC and authoritative pause ar
 });
 
 await test("paused-session UI never offers guaranteed-failing timer starts", () => {
-  const render = admin.match(/function renderBenchFocusCard\([\s\S]*?\n\}/)?.[0] || "";
-  ok(render.includes("unlinkedPausedLabor ?"));
-  ok(render.includes("A paused labor session is still open for this order."));
-  ok(render.includes("Resume Existing Timer"));
-  ok(render.includes("Stop Existing Timer"));
-  const pausedBranch = render.split("unlinkedPausedLabor ?")[1].split("` : `")[0];
-  equal(pausedBranch.includes("data-bench-labor-start"), false);
-  ok(admin.includes('action: "stopLaborSession", sessionId: labor.id'));
-  ok(admin.includes("await Promise.all([refreshBenchFocusState(), refreshDashboardLaborSessions()])"));
-  const stopClient = admin.match(/async function stopExistingPausedLaborForBench\([\s\S]*?\n\}/)?.[0] || "";
-  equal(stopClient.includes('action: "endBenchWork"'), false);
-  equal(stopClient.includes("benchSessionId"), false);
+  const render = admin.match(/function renderBenchFocusCard\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  // Whitespace-tolerant: admin.js may be reformatted (e.g. Prettier) without behavior changes.
+  ok(/unlinkedPausedLabor\s*\?/.test(render));
+  ok(has(render, "A paused labor session is still open for this order."));
+  ok(has(render, "Resume Existing Timer"));
+  ok(has(render, "Stop Existing Timer"));
+  const pausedBranch = render.split(/unlinkedPausedLabor\s*\?/)[1].split(/`\s*:\s*`/)[0];
+  equal(has(pausedBranch, "data-bench-labor-start"), false);
+  ok(adminHas('action: "stopLaborSession", sessionId: labor.id'));
+  ok(/await Promise\.all\(\[\s*refreshBenchFocusState\(\),\s*refreshDashboardLaborSessions\(\),?\s*\]\)/.test(admin));
+  const stopClient = admin.match(/async function stopExistingPausedLaborForBench\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  equal(has(stopClient, 'action: "endBenchWork"'), false);
+  equal(has(stopClient, "benchSessionId"), false);
 });
 
 await test("Assign Time conflicts with open same-order labor while other resolutions remain", () => {
@@ -187,9 +194,9 @@ await test("Assign Time conflicts with open same-order labor while other resolut
   ok(resolveFunction.includes("open_labor_for_order"));
   ok(resolveFunction.includes("Stop or resolve the open labor session"));
   ok(resolveFunction.indexOf("p_resolution = 'discarded'") < resolveFunction.indexOf("open_labor_for_order"));
-  ok(admin.includes("Resolve Later"));
-  ok(admin.includes("bench.hasOpenLabor"));
-  ok(admin.includes("Stop or resolve the open labor session before assigning"));
+  ok(adminHas("Resolve Later"));
+  ok(adminHas("bench.hasOpenLabor"));
+  ok(adminHas("Stop or resolve the open labor session before assigning"));
 });
 
 await test("Bench-aware labor sends no client timestamp and logs source metadata", async () => {
@@ -224,50 +231,50 @@ await test("Custom Work is valid for Bench-linked labor", async () => {
 });
 
 await test("client implements recovery, reminder, and separate Bench/Labor presentation", () => {
-  ok(admin.includes("setInterval(() => refreshBenchFocusState(), 15000)"));
-  ok(admin.includes("BroadcastChannel(\"murphos-bench-focus\")"));
-  ok(admin.includes("window.addEventListener(\"storage\""));
-  ok(admin.includes("window.addEventListener(\"focus\""));
-  ok(admin.includes("Date.parse(bench.startedAt) + 90000"));
-  ok(admin.includes('data-bench-labor-reminder'));
-  ok(admin.includes('reminder.hidden = !isBenchLaborReminderDue(benchFocusState.activeBench)'));
+  ok(adminHas("setInterval(() => refreshBenchFocusState(), 15000)"));
+  ok(adminHas("BroadcastChannel(\"murphos-bench-focus\")"));
+  ok(adminHas("window.addEventListener(\"storage\""));
+  ok(adminHas("window.addEventListener(\"focus\""));
+  ok(adminHas("Date.parse(bench.startedAt) + 90000"));
+  ok(adminHas('data-bench-labor-reminder'));
+  ok(adminHas('reminder.hidden = !isBenchLaborReminderDue(benchFocusState.activeBench)'));
   ok(source.includes("10 * 60 * 1000"));
-  ok(admin.includes("Bench <strong data-bench-elapsed>"));
-  ok(admin.includes("· Labor <strong data-bench-labor-elapsed>"));
+  ok(adminHas("Bench <strong data-bench-elapsed>"));
+  ok(adminHas("· Labor <strong data-bench-labor-elapsed>"));
   ok((admin.match(/benchSessionId: activeBench\.id/g) || []).length >= 2);
   equal(/Keep Timer Running and End Bench Work/.test(admin), false);
 });
 
 await test("active Bench Work always exposes labor starts before the reminder", () => {
-  const render = admin.match(/function renderBenchFocusCard\([\s\S]*?\n\}/)?.[0] || "";
-  const noLaborBranch = render.split('` : `').at(-1);
-  ok(noLaborBranch.includes('data-bench-labor-start="bench"'));
-  ok(noLaborBranch.includes('data-bench-labor-start="now"'));
-  ok(noLaborBranch.includes('data-bench-labor-reminder'));
-  ok(noLaborBranch.includes('reminderDue ? "" : "hidden"'));
+  const render = admin.match(/function renderBenchFocusCard\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  const noLaborBranch = render.split(/`\s*:\s*`/).at(-1);
+  ok(has(noLaborBranch, 'data-bench-labor-start="bench"'));
+  ok(has(noLaborBranch, 'data-bench-labor-start="now"'));
+  ok(has(noLaborBranch, 'data-bench-labor-reminder'));
+  ok(has(noLaborBranch, 'reminderDue ? "" : "hidden"'));
   equal(/reminderDue \? `<div class="bench-focus-reminder-actions">/.test(noLaborBranch), false);
 });
 
 await test("Bench Focus timer controls share stable Today’s Bench delegation", () => {
-  ok(admin.includes("await openBenchChoiceSheet({\n    title: \"Labor timer\""));
-  ok(admin.includes("if (control) await handleDashboardTimerControl(orderKey, control, button)"));
-  ok(admin.includes('const timerControlBtn = e.target.closest("[data-timer-control]")'));
-  ok(admin.includes('const timerActionBtn = e.target.closest("[data-timer-action]")'));
-  ok(admin.includes('handleDashboardTimerControl(\n        timerControlBtn.dataset.timerOrder,\n        timerControlBtn.dataset.timerControl,\n        timerControlBtn'));
-  ok(admin.includes('if (control === "pause")'));
-  ok(admin.includes('} else if (control === "resume")'));
-  ok(admin.includes('} else if (control === "stop")'));
-  ok(admin.includes('await refreshBenchFocusState({ rerender: false })'));
-  ok(admin.includes('await refreshDashboardLaborSessions()'));
-  ok(admin.includes('e.stopPropagation();\n      handleDashboardTimerAction(timerActionBtn)'));
+  ok(adminHas("await openBenchChoiceSheet({\n    title: \"Labor timer\""));
+  ok(adminHas("if (control) await handleDashboardTimerControl(orderKey, control, button)"));
+  ok(adminHas('const timerControlBtn = e.target.closest("[data-timer-control]")'));
+  ok(adminHas('const timerActionBtn = e.target.closest("[data-timer-action]")'));
+  ok(adminHas('handleDashboardTimerControl(\n        timerControlBtn.dataset.timerOrder,\n        timerControlBtn.dataset.timerControl,\n        timerControlBtn'));
+  ok(adminHas('if (control === "pause")'));
+  ok(adminHas('} else if (control === "resume")'));
+  ok(adminHas('} else if (control === "stop")'));
+  ok(adminHas('await refreshBenchFocusState({ rerender: false })'));
+  ok(adminHas('await refreshDashboardLaborSessions()'));
+  ok(adminHas('e.stopPropagation();\n      handleDashboardTimerAction(timerActionBtn)'));
   equal((admin.match(/dashboardPanel\.addEventListener\("click"/g) || []).length, 1);
 });
 
 await test("ordinary Clubhouse timer start clears pending state before rendering controls", () => {
-  const handler = admin.match(/async function handleDashboardTimerPhaseSelect\([\s\S]*?\n\}/)?.[0] || "";
-  ok(handler.includes("await refreshDashboardLaborSessions({ rerender: false })"));
-  ok(handler.includes('dashboardTimerBusy = false;\n    if (activeView === "dashboard") renderHomeDashboard();'));
-  equal(handler.includes("await refreshDashboardLaborSessions();"), false);
+  const handler = admin.match(/async function handleDashboardTimerPhaseSelect\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(handler, "await refreshDashboardLaborSessions({ rerender: false })"));
+  ok(has(handler, 'dashboardTimerBusy = false;\n    if (activeView === "dashboard") renderHomeDashboard();'));
+  equal(has(handler, "await refreshDashboardLaborSessions();"), false);
   ok(handler.indexOf("dashboardTimerBusy = false") < handler.indexOf("renderHomeDashboard()"));
 });
 
@@ -277,17 +284,17 @@ await test("nested timer targets and cross-order End Bench Work dispatch safely"
     const eventTarget = { closest: selector => selector === "[data-timer-control]" ? actionButton : null };
     equal(eventTarget.closest("[data-timer-control]"), actionButton, `${target} resolves through closest()`);
   }
-  ok(admin.includes('const endBenchBtn = e.target.closest("[data-detail-bench-end]")'));
-  ok(admin.includes("endActiveBenchWork({ anchor: endBenchBtn })"));
-  ok(admin.includes('if (!bench) return "";'));
-  ok(admin.includes('String(bench.orderNumber) === String(order.orderNumber)'));
-  ok(admin.includes('strong>#${escapeHtml(bench.orderNumber)} · Active'));
-  equal(admin.includes('querySelector("[data-detail-bench-end]")?.addEventListener'), false);
-  ok(admin.includes("if (laborTimerDelegated || !orderDetail) return;"));
+  ok(adminHas('const endBenchBtn = e.target.closest("[data-detail-bench-end]")'));
+  ok(adminHas("endActiveBenchWork({ anchor: endBenchBtn })"));
+  ok(adminHas('if (!bench) return "";'));
+  ok(adminHas('String(bench.orderNumber) === String(order.orderNumber)'));
+  ok(adminHas('strong>#${escapeHtml(bench.orderNumber)} · Active'));
+  equal(adminHas('querySelector("[data-detail-bench-end]")?.addEventListener'), false);
+  ok(adminHas("if (laborTimerDelegated || !orderDetail) return;"));
   equal((admin.match(/orderDetail\.addEventListener\("click"/g) || []).length, 2);
-  ok(admin.includes('benchSessionId: bench.id, runningAction'));
-  ok(admin.includes('title: switchToOrder ? "End current Bench Work and switch?" : "End Bench Work"'));
-  ok(admin.includes('openImmediateBenchResolution(unresolvedBench, choiceAnchor)'));
+  ok(adminHas('benchSessionId: bench.id, runningAction'));
+  ok(adminHas('title: switchToOrder ? "End current Bench Work and switch?" : "End Bench Work"'));
+  ok(adminHas('openImmediateBenchResolution(unresolvedBench, choiceAnchor)'));
 });
 
 await test("Clubhouse Bench controls stay compact and single-line", () => {
@@ -299,46 +306,46 @@ await test("Clubhouse Bench controls stay compact and single-line", () => {
 });
 
 await test("focused-card controls emit authoritative identifiers and reuse labor controls", () => {
-  const renderer = admin.match(/function renderBenchFocusTimerControls\([\s\S]*?\n\}/)?.[0] || "";
-  ok(renderer.includes('data-timer-control="${primary.control}"'));
-  ok(renderer.includes('data-timer-control="stop"'));
-  ok(renderer.includes('data-session-id="${escapeAttr(session.id)}"'));
-  ok(renderer.includes('data-bench-session-id="${escapeAttr(bench.id)}"'));
-  ok(renderer.includes("DASHBOARD_TIMER_ICONS[primary.icon]"));
-  ok(admin.includes("dashboardLaborSessions[orderKey] || focusedSession || null"));
-  ok(admin.includes("emittedSessionId !== String(session.id)"));
-  const control = admin.match(/async function handleDashboardTimerControl\([\s\S]*?\n\}/)?.[0] || "";
-  ok(control.includes("finally {\n    dashboardTimerBusy = false;\n    await refreshBenchFocusSurfaces();"));
-  equal(control.includes("timerButton?.isConnected"), false);
-  equal(control.includes("controlButton.disabled"), false);
+  const renderer = admin.match(/function renderBenchFocusTimerControls\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(renderer, 'data-timer-control="${primary.control}"'));
+  ok(has(renderer, 'data-timer-control="stop"'));
+  ok(has(renderer, 'data-session-id="${escapeAttr(session.id)}"'));
+  ok(has(renderer, 'data-bench-session-id="${escapeAttr(bench.id)}"'));
+  ok(has(renderer, "DASHBOARD_TIMER_ICONS[primary.icon]"));
+  ok(adminHas("dashboardLaborSessions[orderKey] || focusedSession || null"));
+  ok(adminHas("emittedSessionId !== String(session.id)"));
+  const control = admin.match(/async function handleDashboardTimerControl\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(control, "finally {\n    dashboardTimerBusy = false;\n    await refreshBenchFocusSurfaces();"));
+  equal(has(control, "timerButton?.isConnected"), false);
+  equal(has(control, "controlButton.disabled"), false);
 });
 
 await test("Bench end choices anchor and clamp through the Bench menu utility", () => {
-  ok(admin.includes("anchor: choiceAnchor"));
-  ok(admin.includes('endActiveBenchWork({ anchor: endBenchBtn })'));
-  ok(admin.includes("positionBenchChoicePanel(panel, position, placementMaxHeight)"));
-  ok(admin.includes('sheet.className = `bench-choice-sheet${anchorPosition ? " is-anchored" : ""}`'));
-  ok(admin.includes('event.target.closest?.("[data-action]")'));
-  ok(admin.includes('if (event.key === "Escape") closeBenchChoiceSheet()'));
+  ok(adminHas("anchor: choiceAnchor"));
+  ok(adminHas('endActiveBenchWork({ anchor: endBenchBtn })'));
+  ok(adminHas("positionBenchChoicePanel(panel, position, placementMaxHeight)"));
+  ok(adminHas('sheet.className = `bench-choice-sheet${anchorPosition ? " is-anchored" : ""}`'));
+  ok(adminHas('event.target.closest?.("[data-action]")'));
+  ok(adminHas('if (event.key === "Escape") closeBenchChoiceSheet()'));
   ok(adminCss.includes(".bench-choice-sheet.is-anchored{display:block;padding:0;background:transparent}"));
   ok(adminCss.includes("max-height:calc(100vh - 24px)"));
   equal(adminCss.includes(".bench-choice-sheet.is-anchored{align-items:flex-end"), false);
 });
 
 await test("labor phase choices anchor to their trigger and remain portal-safe", () => {
-  ok(admin.includes("startLaborForActiveBench(benchLaborStartBtn.dataset.benchLaborStart, benchLaborStartBtn)"));
-  ok(admin.includes("chooseBenchLaborPhase(mode === \"bench\" ? \"Start from Bench Work\" : \"Start labor now\", anchor)"));
-  ok(admin.includes("document.body.appendChild(benchChoiceRoot)"));
-  ok(admin.includes('window.addEventListener("resize", sheet._reposition)'));
-  ok(admin.includes('window.addEventListener("scroll", sheet._reposition, true)'));
-  ok(admin.includes("anchorBottom + gap"));
-  ok(admin.includes("anchorTop - gap"));
-  ok(admin.includes('benchChoiceRoot.addEventListener("click"'));
-  ok(admin.includes('event.target.closest?.("[data-action]")'));
-  ok(admin.includes("event.stopImmediatePropagation()"));
-  ok(admin.includes("closeBenchChoiceSheet(action?.dataset.action ?? null)"));
-  equal(admin.includes("actions.appendChild(popover)"), false);
-  equal(admin.includes('document.addEventListener("click", (e) => {\n    if (!dashboardTimerPopoverOrder)'), false);
+  ok(adminHas("startLaborForActiveBench(benchLaborStartBtn.dataset.benchLaborStart, benchLaborStartBtn)"));
+  ok(adminHas("chooseBenchLaborPhase(mode === \"bench\" ? \"Start from Bench Work\" : \"Start labor now\", anchor)"));
+  ok(adminHas("document.body.appendChild(benchChoiceRoot)"));
+  ok(adminHas('window.addEventListener("resize", sheet._reposition)'));
+  ok(adminHas('window.addEventListener("scroll", sheet._reposition, true)'));
+  ok(adminHas("anchorBottom + gap"));
+  ok(adminHas("anchorTop - gap"));
+  ok(adminHas('benchChoiceRoot.addEventListener("click"'));
+  ok(adminHas('event.target.closest?.("[data-action]")'));
+  ok(adminHas("event.stopImmediatePropagation()"));
+  ok(adminHas("closeBenchChoiceSheet(action?.dataset.action ?? null)"));
+  equal(adminHas("actions.appendChild(popover)"), false);
+  equal(adminHas('document.addEventListener("click", (e) => {\n    if (!dashboardTimerPopoverOrder)'), false);
   ok(adminCss.includes(".bench-choice-sheet{position:fixed"));
   ok(adminCss.includes(".bench-choice-sheet{position:fixed;inset:0;z-index:1300"));
   equal(adminCss.includes("--admin-z-modal"), false);
@@ -348,75 +355,75 @@ await test("labor phase choices anchor to their trigger and remain portal-safe",
 });
 
 await test("Safari timer menu events stay inside one global portal boundary", () => {
-  const root = admin.match(/function getBenchChoiceRoot\(\) \{[\s\S]*?\n\}/)?.[0] || "";
-  ok(root.includes('benchChoiceRoot.addEventListener("click"'));
+  const root = admin.match(/function getBenchChoiceRoot\(\) \{[\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(root, 'benchChoiceRoot.addEventListener("click"'));
   equal((root.match(/addEventListener\("click"/g) || []).length, 1);
-  ok(root.includes('event.target.closest?.("[data-action]")'));
-  ok(root.includes("event.preventDefault()"));
-  ok(root.includes("event.stopPropagation()"));
-  ok(root.includes("event.stopImmediatePropagation()"));
-  ok(root.includes("document.body.appendChild(benchChoiceRoot)"));
+  ok(has(root, 'event.target.closest?.("[data-action]")'));
+  ok(has(root, "event.preventDefault()"));
+  ok(has(root, "event.stopPropagation()"));
+  ok(has(root, "event.stopImmediatePropagation()"));
+  ok(has(root, "document.body.appendChild(benchChoiceRoot)"));
   for (const target of ["button", "span", "svg", "path"]) {
     const actionButton = { dataset: { action: "resume" } };
     const eventTarget = { closest: selector => selector === "[data-action]" ? actionButton : null };
     equal(eventTarget.closest("[data-action]"), actionButton, `${target} resolves to portal action`);
   }
-  ok(admin.includes('<div class="bench-choice-backdrop" data-overlay-dismiss>'));
-  equal(admin.includes("actions.appendChild(popover)"), false);
+  ok(adminHas('<div class="bench-choice-backdrop" data-overlay-dismiss>'));
+  equal(adminHas("actions.appendChild(popover)"), false);
   equal((admin.match(/function getBenchChoiceRoot\(/g) || []).length, 1);
   equal((admin.match(/document\.addEventListener\("click", \(e\) => \{\n    if \(!dashboardTimerPopoverOrder/g) || []).length, 0);
 });
 
 await test("paused dashboard resume explicitly creates Bench Work or cancels", () => {
-  const resume = admin.match(/async function resumePausedLaborWithNewBenchWork\([\s\S]*?\n\}/)?.[0] || "";
-  ok(resume.includes("Resume timer and put this glove back on the bench?"));
-  ok(resume.includes("Resume and Start Bench Work"));
-  ok(resume.includes('action: "resumeLaborWithNewBenchWork"'));
-  ok(resume.includes("if (choice !== \"resume\") return"));
-  ok(resume.includes("await refreshBenchFocusSurfaces()"));
-  const control = admin.match(/async function handleDashboardTimerControl\([\s\S]*?\n\}/)?.[0] || "";
-  ok(control.includes("if (!activeBench)"));
-  ok(control.includes("Another glove is on the bench."));
-  ok(control.includes("endActiveBenchWork({ anchor: choiceAnchor })"));
-  ok(control.includes('action: "resumeLaborSession"'));
+  const resume = admin.match(/async function resumePausedLaborWithNewBenchWork\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(resume, "Resume timer and put this glove back on the bench?"));
+  ok(has(resume, "Resume and Start Bench Work"));
+  ok(has(resume, 'action: "resumeLaborWithNewBenchWork"'));
+  ok(has(resume, "if (choice !== \"resume\") return"));
+  ok(has(resume, "await refreshBenchFocusSurfaces()"));
+  const control = admin.match(/async function handleDashboardTimerControl\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(control, "if (!activeBench)"));
+  ok(has(control, "Another glove is on the bench."));
+  ok(has(control, "endActiveBenchWork({ anchor: choiceAnchor })"));
+  ok(has(control, 'action: "resumeLaborSession"'));
 });
 
 await test("same-order paused Start Bench Work is explicit and trigger-anchored", () => {
-  const start = admin.match(/async function startBenchWorkFromDashboard\([\s\S]*?\n\}/)?.[0] || "";
-  ok(start.includes("const choiceAnchor = anchor?.x != null ? anchor"));
-  ok(start.includes("Paused timer for #${orderNumber}"));
-  ok(start.includes("Resume this order’s timer and start Bench Work for the same glove?"));
-  ok(start.includes("Resume Timer and Start Bench Work"));
-  ok(start.includes("Start Bench Work and Leave Timer Paused"));
-  ok(start.includes("anchor: choiceAnchor"));
-  ok(start.includes("pausedAction: choice }, choiceAnchor"));
-  ok(admin.includes("startBenchWorkFromDashboard(benchStartBtn.dataset.benchStart, {}, benchStartBtn)"));
-  equal(start.includes("Resume previous labor?"), false);
+  const start = admin.match(/async function startBenchWorkFromDashboard\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(start, "const choiceAnchor = anchor?.x != null ? anchor"));
+  ok(has(start, "Paused timer for #${orderNumber}"));
+  ok(has(start, "Resume this order’s timer and start Bench Work for the same glove?"));
+  ok(has(start, "Resume Timer and Start Bench Work"));
+  ok(has(start, "Start Bench Work and Leave Timer Paused"));
+  ok(has(start, "anchor: choiceAnchor"));
+  ok(has(start, "pausedAction: choice }, choiceAnchor"));
+  ok(adminHas("startBenchWorkFromDashboard(benchStartBtn.dataset.benchStart, {}, benchStartBtn)"));
+  equal(has(start, "Resume previous labor?"), false);
 });
 
 await test("all Bench menus avoid bottom pinning and unresolved actions share the portal", () => {
   equal(adminCss.includes(".bench-choice-sheet{position:fixed;inset:0;z-index:1300;display:flex;align-items:flex-end"), false);
   ok(adminCss.includes(".bench-choice-sheet{position:fixed;inset:0;z-index:1300;display:flex;align-items:center"));
-  const unresolved = admin.match(/async function openUnresolvedBenchList\([\s\S]*?\n\}/)?.[0] || "";
-  ok(unresolved.includes("await openBenchChoiceSheet({"));
-  ok(unresolved.includes("anchor: choiceAnchor"));
-  ok(unresolved.includes('data-action="assign:'));
-  ok(unresolved.includes('data-action="discard:'));
-  equal(unresolved.includes("document.createElement"), false);
-  equal(admin.includes("bench-unresolved-sheet"), false);
-  ok(admin.includes("openUnresolvedBenchList(unresolvedBtn)"));
-  const resolve = admin.match(/async function resolveBenchInterval\([\s\S]*?\n\}/)?.[0] || "";
-  ok(resolve.includes('chooseBenchLaborPhase("Assign Bench Work time", anchor)'));
-  ok(resolve.includes("anchor\n    })") || resolve.includes("anchor\r\n    })"));
+  const unresolved = admin.match(/async function openUnresolvedBenchList\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(unresolved, "await openBenchChoiceSheet({"));
+  ok(has(unresolved, "anchor: choiceAnchor"));
+  ok(has(unresolved, 'data-action="assign:'));
+  ok(has(unresolved, 'data-action="discard:'));
+  equal(has(unresolved, "document.createElement"), false);
+  equal(adminHas("bench-unresolved-sheet"), false);
+  ok(adminHas("openUnresolvedBenchList(unresolvedBtn)"));
+  const resolve = admin.match(/async function resolveBenchInterval\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(resolve, 'chooseBenchLaborPhase("Assign Bench Work time", anchor)'));
+  ok(has(resolve, "anchor\n    })") || has(resolve, "anchor\r\n    })"));
 });
 
 await test("anchored Bench menus stay inside the live mobile viewport", () => {
   const placementStart = admin.indexOf("function getBenchChoiceVerticalPlacement(");
   const placementEnd = admin.indexOf("\nfunction positionBenchChoicePanel", placementStart);
   const placementSource = admin.slice(placementStart, placementEnd).trim();
-  const position = admin.match(/function positionBenchChoicePanel\([\s\S]*?\n\}/)?.[0] || "";
-  const open = admin.match(/function openBenchChoiceSheet\([\s\S]*?\n\}/)?.[0] || "";
-  const close = admin.match(/function closeBenchChoiceSheet\([\s\S]*?\n\}/)?.[0] || "";
+  const position = admin.match(/function positionBenchChoicePanel\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  const open = admin.match(/function openBenchChoiceSheet\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  const close = admin.match(/function closeBenchChoiceSheet\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
   const getPlacement = Function(`return (${placementSource})`)();
   const middleScreen = getPlacement({
     viewportTop: 0,
@@ -436,17 +443,17 @@ await test("anchored Bench menus stay inside the live mobile viewport", () => {
   });
   equal(nearBottom.top, 294);
   equal(nearBottom.maxHeight, 682);
-  ok(position.includes("window.visualViewport"));
-  ok(position.includes("visualViewport?.offsetTop"));
-  ok(position.includes("visualViewport?.height"));
-  ok(position.includes("panel.style.maxHeight"));
-  ok(position.includes("requestedMaxHeight"));
-  ok(open.includes("getBenchChoiceVerticalPlacement"));
-  ok(open.includes("placement.maxHeight"));
-  ok(open.includes('sheet._visualViewport?.addEventListener("resize"'));
-  ok(open.includes('sheet._visualViewport?.addEventListener("scroll"'));
-  ok(close.includes('sheet._visualViewport?.removeEventListener("resize"'));
-  ok(close.includes('sheet._visualViewport?.removeEventListener("scroll"'));
+  ok(has(position, "window.visualViewport"));
+  ok(has(position, "visualViewport?.offsetTop"));
+  ok(has(position, "visualViewport?.height"));
+  ok(has(position, "panel.style.maxHeight"));
+  ok(has(position, "requestedMaxHeight"));
+  ok(has(open, "getBenchChoiceVerticalPlacement"));
+  ok(has(open, "placement.maxHeight"));
+  ok(has(open, 'sheet._visualViewport?.addEventListener("resize"'));
+  ok(has(open, 'sheet._visualViewport?.addEventListener("scroll"'));
+  ok(has(close, 'sheet._visualViewport?.removeEventListener("resize"'));
+  ok(has(close, 'sheet._visualViewport?.removeEventListener("scroll"'));
   ok(adminCss.includes(".bench-choice-sheet.is-anchored .bench-choice-panel{"));
   ok(adminCss.includes("box-sizing:border-box"));
   ok(adminCss.includes("overscroll-behavior:contain"));
@@ -454,62 +461,62 @@ await test("anchored Bench menus stay inside the live mobile viewport", () => {
 });
 
 await test("Bench resolution reconciles ambiguous responses and unlocks rendered controls", () => {
-  const resolve = admin.match(/async function resolveBenchInterval\([\s\S]*?\n\}/)?.[0] || "";
-  ok(resolve.includes("await refreshBenchFocusState({ rerender: false })"));
-  ok(resolve.includes("const stillUnresolved = benchFocusState.unresolved.some"));
-  ok(resolve.includes("if (!stillUnresolved)"));
-  ok(resolve.includes("The server response was interrupted. Bench Work was rechecked"));
-  ok(resolve.includes('action: "resolveBenchWork"'));
-  ok(resolve.includes('finally {\n    benchFocusBusy = false;\n    if (activeView === "dashboard") renderHomeDashboard();'));
+  const resolve = admin.match(/async function resolveBenchInterval\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(resolve, "await refreshBenchFocusState({ rerender: false })"));
+  ok(has(resolve, "const stillUnresolved = benchFocusState.unresolved.some"));
+  ok(has(resolve, "if (!stillUnresolved)"));
+  ok(has(resolve, "The server response was interrupted. Bench Work was rechecked"));
+  ok(has(resolve, 'action: "resolveBenchWork"'));
+  ok(has(resolve, 'finally {\n    benchFocusBusy = false;\n    if (activeView === "dashboard") renderHomeDashboard();'));
   equal(resolve.indexOf("benchFocusBusy = false") < resolve.lastIndexOf("renderHomeDashboard()"), true);
 });
 
 await test("Bench end performs one authoritative multi-surface refresh", () => {
-  const refresh = admin.match(/async function refreshBenchFocusSurfaces\([\s\S]*?\n\}/)?.[0] || "";
-  ok(refresh.includes("refreshBenchFocusState({ rerender: false })"));
-  ok(refresh.includes("refreshDashboardLaborSessions({ rerender: false })"));
-  ok(refresh.includes("renderHomeDashboard()"));
-  ok(refresh.includes("refreshOrderDetailBenchBanner()"));
-  ok(refresh.includes("loadLaborSessions(currentOrder.orderNumber)"));
-  ok(admin.includes("await refreshBenchFocusSurfaces({ refreshViewedLabor: true })"));
-  ok(admin.includes("existing?.remove()"));
+  const refresh = admin.match(/async function refreshBenchFocusSurfaces\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(refresh, "refreshBenchFocusState({ rerender: false })"));
+  ok(has(refresh, "refreshDashboardLaborSessions({ rerender: false })"));
+  ok(has(refresh, "renderHomeDashboard()"));
+  ok(has(refresh, "refreshOrderDetailBenchBanner()"));
+  ok(has(refresh, "loadLaborSessions(currentOrder.orderNumber)"));
+  ok(adminHas("await refreshBenchFocusSurfaces({ refreshViewedLabor: true })"));
+  ok(adminHas("existing?.remove()"));
   equal((admin.match(/async function refreshBenchFocusSurfaces/g) || []).length, 1);
 });
 
 await test("simplified Bench card omits duplicated administrative detail", () => {
-  const render = admin.match(/function renderBenchFocusCard\([\s\S]*?\n\}/)?.[0] || "";
-  ok(render.includes("bench-focus-heading"));
-  ok(render.includes("bench-focus-summary"));
-  ok(render.includes("bench-focus-bench-time"));
-  ok(render.includes("bench-focus-labor-status"));
-  ok(render.includes("bench-focus-card-actions"));
-  equal(render.includes("bench-focus-details"), false);
-  equal(render.includes("Services</dt>"), false);
-  equal(render.includes("Lace</dt>"), false);
-  equal(render.includes("Status</dt>"), false);
-  equal(render.includes("Estimated</dt>"), false);
-  equal(render.includes("servicesRequested"), false);
-  equal(render.includes("estimatedCompletion"), false);
+  const render = admin.match(/function renderBenchFocusCard\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(render, "bench-focus-heading"));
+  ok(has(render, "bench-focus-summary"));
+  ok(has(render, "bench-focus-bench-time"));
+  ok(has(render, "bench-focus-labor-status"));
+  ok(has(render, "bench-focus-card-actions"));
+  equal(has(render, "bench-focus-details"), false);
+  equal(has(render, "Services</dt>"), false);
+  equal(has(render, "Lace</dt>"), false);
+  equal(has(render, "Status</dt>"), false);
+  equal(has(render, "Estimated</dt>"), false);
+  equal(has(render, "servicesRequested"), false);
+  equal(has(render, "estimatedCompletion"), false);
 });
 
 await test("focused Today’s Bench row is status-only while ordinary timers remain", () => {
-  const render = admin.match(/function renderDashboardOrderRow\([\s\S]*?\n\}/)?.[0] || "";
-  ok(render.includes('const isFocusedOrder = String(benchFocusState.activeBench?.orderNumber || "") === orderKey'));
-  ok(render.includes('isFocusedOrder ? "" : renderDashboardTimerButton(order, session)'));
-  ok(render.includes('isFocusedOrder ? "On Bench" : "Start Bench Work"'));
-  ok(render.includes("timerStateHtml"));
+  const render = admin.match(/function renderDashboardOrderRow\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(render, 'const isFocusedOrder = String(benchFocusState.activeBench?.orderNumber || "") === orderKey'));
+  ok(has(render, 'isFocusedOrder ? "" : renderDashboardTimerButton(order, session)'));
+  ok(has(render, 'isFocusedOrder ? "On Bench" : "Start Bench Work"'));
+  ok(has(render, "timerStateHtml"));
   equal((admin.match(/function renderDashboardTimerButton/g) || []).length, 1);
 });
 
 await test("cross-order warning stays compact and routes back to Clubhouse", () => {
-  const render = admin.match(/function renderOrderDetailBenchBanner\([\s\S]*?\n\}/)?.[0] || "";
-  ok(render.includes("Another glove is on the bench"));
-  ok(render.includes("data-detail-bench-clubhouse"));
-  ok(render.includes("data-detail-bench-end"));
-  equal(render.includes("data-timer-control"), false);
-  equal(render.includes("data-timer-action"), false);
-  ok(admin.includes('const clubhouseBtn = e.target.closest("[data-detail-bench-clubhouse]")'));
-  ok(admin.includes('setActiveView("dashboard")'));
+  const render = admin.match(/function renderOrderDetailBenchBanner\([\s\S]*?\n\}(?=\n)/)?.[0] || "";
+  ok(has(render, "Another glove is on the bench"));
+  ok(has(render, "data-detail-bench-clubhouse"));
+  ok(has(render, "data-detail-bench-end"));
+  equal(has(render, "data-timer-control"), false);
+  equal(has(render, "data-timer-action"), false);
+  ok(adminHas('const clubhouseBtn = e.target.closest("[data-detail-bench-clubhouse]")'));
+  ok(adminHas('setActiveView("dashboard")'));
 });
 
 console.log(`\n${tests} tests, ${assertions} assertions passed`);
