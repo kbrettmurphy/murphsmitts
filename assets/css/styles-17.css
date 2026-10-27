@@ -2611,6 +2611,7 @@ h1.mm-section-title{ font-size: clamp(30px, 4.4vw, 44px); }
 #serviceRequestForm .glove-request-card[data-glove-section]{ border: 1px solid var(--hairline-soft); }
 #serviceRequestForm .inline-lace-reference summary{ font-size: 13px; }
 #serviceRequestForm .glove-add-actions{ margin-top: 0; }
+#serviceRequestForm .glove-story-textarea{ min-height: 104px; }
 
 /* Choice tiles (glove type, services, drop-off) */
 #serviceRequestForm .mm-choice-tiles{
@@ -2718,7 +2719,10 @@ h1.mm-section-title{ font-size: clamp(30px, 4.4vw, 44px); }
 
 @media (max-width: 640px){
   #serviceRequestForm .service-section{ padding: 18px 16px; border-radius: var(--radius-md); }
-  #serviceRequestForm .mm-choice-tiles{ grid-template-columns: repeat(2, 1fr); }
+  /* Single column on phones so tile labels never wrap */
+  #serviceRequestForm .mm-choice-tiles{ grid-template-columns: 1fr; }
+  #serviceRequestForm .mm-choice-tiles.is-3{ grid-template-columns: repeat(3, 1fr); }
+  #serviceRequestForm .tile-tail{ display: none; }
   #serviceRequestForm .mm-choice-tiles.is-2{ grid-template-columns: 1fr; }
   /* Glove type reads as a segmented control on phones: tile highlight shows the pick */
   #serviceRequestForm .mm-choice-tiles.is-3 > .mm-choice{ position: relative; justify-content: center; text-align: center; padding: 8px 6px; font-size: 13.5px; }

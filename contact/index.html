@@ -154,9 +154,9 @@ body_class: inner
                     <div class="mm-field" id="gloveTypeGroup">
                       <div class="group-label">Glove Type</div>
                       <div class="mm-choice-list mm-choice-tiles is-3">
-                        <label class="mm-choice"><input type="radio" name="gloveType" value="Fielders Glove"> <span>Fielders Glove</span></label>
-                        <label class="mm-choice"><input type="radio" name="gloveType" value="Catchers Mitt"> <span>Catchers Mitt</span></label>
-                        <label class="mm-choice"><input type="radio" name="gloveType" value="First Base Mitt"> <span>First Base Mitt</span></label>
+                        <label class="mm-choice"><input type="radio" name="gloveType" value="Fielders Glove"> <span>Fielders<span class="tile-tail"> Glove</span></span></label>
+                        <label class="mm-choice"><input type="radio" name="gloveType" value="Catchers Mitt"> <span>Catchers<span class="tile-tail"> Mitt</span></span></label>
+                        <label class="mm-choice"><input type="radio" name="gloveType" value="First Base Mitt"> <span>First Base<span class="tile-tail"> Mitt</span></span></label>
                       </div>
                     </div>
 
@@ -231,14 +231,14 @@ body_class: inner
 
                     <div class="mm-field custom-color-field">
                       <label for="sr-custom-color">Custom Color Request <span class="opt-tag">Optional</span></label>
-                      <textarea id="sr-custom-color" class="compact-textarea" name="customColorRequest" rows="1" placeholder="Don’t see your color? Special orders may add time."></textarea>
+                      <textarea id="sr-custom-color" class="compact-textarea" name="customColorRequest" rows="1" placeholder="Don’t see your color? Describe it here."></textarea>
                     </div>
                   </div>
 
                   <div class="glove-subgroup" data-simple-title="Glove Notes">
                     <div class="mm-field">
-                      <label for="sr-notes">Notes <span class="opt-tag">Optional</span></label>
-                      <textarea id="sr-notes" class="compact-textarea" name="gloveNotes" rows="1" placeholder="Wear, damage, break-in preferences"></textarea>
+                      <label for="sr-notes">What’s this glove’s story? <span class="opt-tag">Optional</span></label>
+                      <textarea id="sr-notes" class="glove-story-textarea" name="gloveNotes" rows="3" placeholder="Who’s played with it, how long you’ve had it, a game you remember. Anything I should know about its condition helps too."></textarea>
                     </div>
 
                     <div class="mm-field glove-photo-field" data-photo-field>
@@ -263,8 +263,8 @@ body_class: inner
 
           <div class="service-section">
             <div class="service-section-head">
-              <h3 class="service-section-title">Drop-Off</h3>
-              <p class="service-help">How is the glove getting to me?</p>
+              <h3 class="service-section-title">Getting Your Glove to Me</h3>
+              <p class="service-help">Local or shipped, either works.</p>
             </div>
             <div class="service-section-body">
               <div class="mm-field" id="dropOffGroup">
@@ -509,9 +509,9 @@ body_class: inner
             <div class="mm-field" data-glove-type-group>
               <div class="group-label">Glove Type</div>
               <div class="mm-choice-list mm-choice-tiles is-3">
-                <label class="mm-choice"><input type="radio" name="gloveType-${index}" value="Fielders Glove"> <span>Fielders Glove</span></label>
-                <label class="mm-choice"><input type="radio" name="gloveType-${index}" value="Catchers Mitt"> <span>Catchers Mitt</span></label>
-                <label class="mm-choice"><input type="radio" name="gloveType-${index}" value="First Base Mitt"> <span>First Base Mitt</span></label>
+                <label class="mm-choice"><input type="radio" name="gloveType-${index}" value="Fielders Glove"> <span>Fielders<span class="tile-tail"> Glove</span></span></label>
+                <label class="mm-choice"><input type="radio" name="gloveType-${index}" value="Catchers Mitt"> <span>Catchers<span class="tile-tail"> Mitt</span></span></label>
+                <label class="mm-choice"><input type="radio" name="gloveType-${index}" value="First Base Mitt"> <span>First Base<span class="tile-tail"> Mitt</span></span></label>
               </div>
             </div>
 
@@ -574,14 +574,14 @@ body_class: inner
 
             <div class="mm-field custom-color-field">
               <label>Custom Color Request <span class="opt-tag">Optional</span></label>
-              <textarea class="compact-textarea" name="customColorRequest" rows="1" placeholder="Don’t see your color? Special orders may add time."></textarea>
+              <textarea class="compact-textarea" name="customColorRequest" rows="1" placeholder="Don’t see your color? Describe it here."></textarea>
             </div>
           </div>
 
           <div class="glove-subgroup" data-simple-title="Glove Notes">
             <div class="mm-field">
-              <label>Notes <span class="opt-tag">Optional</span></label>
-              <textarea class="compact-textarea" name="gloveNotes" rows="1" placeholder="Wear, damage, break-in preferences"></textarea>
+              <label>What’s this glove’s story? <span class="opt-tag">Optional</span></label>
+              <textarea class="glove-story-textarea" name="gloveNotes" rows="3" placeholder="Who’s played with it, how long you’ve had it, a game you remember. Anything I should know about its condition helps too."></textarea>
             </div>
 
             <div class="mm-field glove-photo-field" data-photo-field>
@@ -713,7 +713,7 @@ body_class: inner
     }
 
     if (!selectedValue("dropOffMethod")) {
-      return fail("Please select a drop-off method.", null, dropOffGroup);
+      return fail("Please choose local or shipped.", null, dropOffGroup);
     }
 
     if (selectedValue("dropOffMethod") === "Shipped to Murph’s Mitt Maintenance") {
