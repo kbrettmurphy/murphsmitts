@@ -88,31 +88,34 @@ body_class: inner
 
       <div class="service-form-wrap">
         <form id="serviceRequestForm" class="mm-form" novalidate>
-          <p class="required-note"><strong>Required fields</strong> are marked in red. No work starts from this form alone; I review the request and confirm an estimate first.</p>
+          <p class="required-note">Takes about two minutes. Everything is required unless marked <span class="opt-tag">Optional</span>. No work starts until you approve an estimate.</p>
 
           <div id="serviceStatus" class="service-status" role="status" aria-live="polite"></div>
 
           <div class="service-section">
-            <h3 class="service-section-title">Contact Info</h3>
+            <div class="service-section-head">
+              <h3 class="service-section-title">Your Info</h3>
+              <p class="service-help">Where should order updates go?</p>
+            </div>
             <div class="service-section-body">
-              <p class="service-help">Use the email and phone number where you want order updates. Text updates are optional.</p>
-
               <div class="mm-field">
-                <label for="sr-name">Customer Name <span class="req-badge">Required</span></label>
-                <input id="sr-name" name="customerName" type="text" autocomplete="name" placeholder="Customer Name">
+                <label for="sr-name">Name</label>
+                <input id="sr-name" name="customerName" type="text" autocomplete="name" placeholder="First and last name">
               </div>
-              
+
               <div class="mm-grid-2">
                 <div class="mm-field">
-                  <label for="sr-email">Email <span class="req-badge">Required</span></label>
-                  <input id="sr-email" name="emailAddress" type="email" autocomplete="email" placeholder="Email">
+                  <label for="sr-email">Email</label>
+                  <input id="sr-email" name="emailAddress" type="email" autocomplete="email" placeholder="you@example.com">
                 </div>
 
-                <div class="mm-field" >
-                  <label for="sr-phone">Phone Number <span class="req-badge">Required</span></label>
-                  <input id="sr-phone" name="phoneNumber" type="tel" inputmode="tel" placeholder="Phone Number">
+                <div class="mm-field">
+                  <label for="sr-phone">Phone Number</label>
+                  <input id="sr-phone" name="phoneNumber" type="tel" inputmode="tel" autocomplete="tel" placeholder="(555) 555-5555">
                 </div>
+              </div>
 
+              <div class="service-optins">
                 <div class="mm-field" id="smsOptInGroup">
                   <label class="mm-choice sms-optin-label">
                     <input id="sr-sms-opt-in" name="smsOptIn" type="checkbox">
@@ -129,18 +132,18 @@ body_class: inner
                     <input id="sr-newsletter-opt-in" name="newsletterOptIn" type="checkbox">
                     <span>Send me occasional glove-care tips and stories.</span>
                   </label>
-                  <div class="newsletter-optin-disclosure">Optional. You can unsubscribe at any time.</div>
+                  <div class="newsletter-optin-disclosure">Unsubscribe any time.</div>
                 </div>
-                
               </div>
             </div>
           </div>
 
           <div class="service-section glove-information-section">
-            <h3 class="service-section-title">Glove Information</h3>
+            <div class="service-section-head">
+              <h3 class="service-section-title">Your Glove</h3>
+              <p class="service-help">Sending more than one? Add each glove separately so services and lace stay with the right glove.</p>
+            </div>
             <div class="service-section-body">
-              <p class="service-help">Add each glove separately so services, lace colors, and notes stay tied to the right order.</p>
-
               <article class="glove-request-card" data-primary-glove-card>
                 <div class="glove-section-heading">
                   <h4 class="glove-card-title">Glove 1</h4>
@@ -148,47 +151,44 @@ body_class: inner
 
                 <div class="glove-card-body">
                   <div class="glove-subgroup" data-simple-title="Glove Details">
-                    <h5 class="glove-subgroup-title">Basics</h5>
-                    <p class="service-help">A model number helps, but it is fine if you are not sure. The glove type determines whether web type is needed.</p>
-
-                    <div class="mm-field">
-                      <label for="sr-brand">Brand / Model (if known)</label>
-                      <input id="sr-brand" name="brandModel" type="text" placeholder="Example: Nokona AMG1200, Rawlings HoH PRO7175SB-2WSS">
-                    </div>
-
                     <div class="mm-field" id="gloveTypeGroup">
-                      <div class="group-label">Glove Type <span class="req-badge">Required</span></div>
-                      <div class="mm-choice-list">
+                      <div class="group-label">Glove Type</div>
+                      <div class="mm-choice-list mm-choice-tiles is-3">
                         <label class="mm-choice"><input type="radio" name="gloveType" value="Fielders Glove"> <span>Fielders Glove</span></label>
                         <label class="mm-choice"><input type="radio" name="gloveType" value="Catchers Mitt"> <span>Catchers Mitt</span></label>
                         <label class="mm-choice"><input type="radio" name="gloveType" value="First Base Mitt"> <span>First Base Mitt</span></label>
                       </div>
                     </div>
 
-                    <div id="webTypeWrap" class="mm-field is-hidden">
-                      <label for="sr-web-type">Web Type (Fielders Gloves Only) <span class="req-badge">Required</span></label>
-                      <div class="note">Trapeze and Modified Trapeze webs require additional lace and labor and may be priced higher.</div>
-                      <select id="sr-web-type" name="webType">
-                        <option value="">Choose</option>
-                        <option value="Basket (Fully Closed) Web">Basket (Fully Closed) Web</option>
-                        <option value="I-Web">I-Web</option>
-                        <option value="H-Web">H-Web</option>
-                        <option value="Modified Trapeze Web">Modified Trapeze Web</option>
-                        <option value="Trapeze Web">Trapeze Web</option>
-                        <option value="Single Post Web">Single Post Web</option>
-                        <option value="Two-Piece Web">Two-Piece Web</option>
-                        <option value="Other / Not Sure">Other / Not Sure</option>
-                      </select>
+                    <div class="mm-grid-2 glove-basics-grid">
+                      <div class="mm-field">
+                        <label for="sr-brand">Brand / Model <span class="opt-tag">Optional</span></label>
+                        <input id="sr-brand" name="brandModel" type="text" placeholder="e.g. Wilson A2000 1786">
+                      </div>
+
+                      <div id="webTypeWrap" class="mm-field is-hidden">
+                        <label for="sr-web-type">Web Type</label>
+                        <select id="sr-web-type" name="webType">
+                          <option value="">Choose</option>
+                          <option value="Basket (Fully Closed) Web">Basket (Fully Closed) Web</option>
+                          <option value="I-Web">I-Web</option>
+                          <option value="H-Web">H-Web</option>
+                          <option value="Modified Trapeze Web">Modified Trapeze Web</option>
+                          <option value="Trapeze Web">Trapeze Web</option>
+                          <option value="Single Post Web">Single Post Web</option>
+                          <option value="Two-Piece Web">Two-Piece Web</option>
+                          <option value="Other / Not Sure">Other / Not Sure</option>
+                        </select>
+                        <div class="note">Trapeze webs take extra lace and labor and may cost more.</div>
+                      </div>
                     </div>
                   </div>
 
                   <div class="glove-subgroup" data-simple-title="Services">
-                    <h5 class="glove-subgroup-title">Services</h5>
-                    <p class="service-help">Select what you think the glove needs. I will confirm the right work and price before starting.</p>
-
                     <div class="mm-field" id="servicesGroup">
-                      <div class="group-label">Services Requested <span class="req-badge">Required</span></div>
-                      <div class="mm-choice-list">
+                      <div class="group-label">Services</div>
+                      <p class="service-help">Pick what you think it needs. I'll confirm the work and price before starting.</p>
+                      <div class="mm-choice-list mm-choice-tiles">
                         <label class="mm-choice"><input type="checkbox" name="servicesRequested" value="Relacing"> <span>Relacing</span></label>
                         <label class="mm-choice"><input type="checkbox" name="servicesRequested" value="Cleaning + Conditioning"> <span>Cleaning + Conditioning</span></label>
                         <label class="mm-choice"><input type="checkbox" name="servicesRequested" value="Cleaning + Conditioning + Relacing"> <span>Cleaning + Conditioning + Relacing</span></label>
@@ -199,65 +199,54 @@ body_class: inner
                         <label class="mm-choice"><input type="checkbox" name="servicesRequested" value="Web Replacement"> <span>Web Replacement</span></label>
                         <label class="mm-inline-other">
                           <span class="mm-choice"><input type="checkbox" id="serviceOtherCheck" value="Other"> <span>Other:</span></span>
-                          <input id="serviceOtherText" type="text" placeholder="Describe other requested work">
+                          <input id="serviceOtherText" type="text" placeholder="Describe other work">
                         </label>
                       </div>
                     </div>
                   </div>
 
                   <div class="glove-subgroup" data-simple-title="Lace Color Selection">
-                    <h5 class="glove-subgroup-title">Lace</h5>
-                    <div class="lace-decision-support mm-status-message">
-                      <div>
-                        <strong>Primary lace</strong> is the main relace color. <strong>Secondary / accent lace</strong> is optional for multi-color work.
-                      </div>
-                    </div>
-
-                    <details class="inline-lace-reference">
-                      <summary>Show available lace colors</summary>
-                      <div class="form-lace-reference-grid" data-customer-lace-reference aria-label="Lace color reference">
-                        <div class="mm-status-message lace-loading">Loading lace colors...</div>
-                      </div>
-                    </details>
-
                     <div class="mm-grid-2 lace-select-grid">
                       <div class="mm-field">
-                        <label for="sr-primary-lace">Primary Lace Color <span class="req-badge">Required</span></label>
-                        <div class="note">Choose the main color for the full relace.</div>
+                        <label for="sr-primary-lace">Lace Color</label>
                         <select id="sr-primary-lace" name="primaryLaceColor" data-lace-select="primary">
                           <option value="">Loading lace colors...</option>
                         </select>
                       </div>
 
                       <div class="mm-field">
-                        <label for="sr-secondary-lace">Secondary / Accent Lace Color</label>
-                        <div class="note">Leave blank for a single-color relace.</div>
+                        <label for="sr-secondary-lace">Accent Color <span class="opt-tag">Optional</span></label>
                         <select id="sr-secondary-lace" name="secondaryLaceColor" data-lace-select="secondary">
                           <option value="">Loading lace colors...</option>
                         </select>
                       </div>
                     </div>
 
+                    <details class="inline-lace-reference">
+                      <summary>See lace colors</summary>
+                      <div class="form-lace-reference-grid" data-customer-lace-reference aria-label="Lace color reference">
+                        <div class="mm-status-message lace-loading">Loading lace colors...</div>
+                      </div>
+                    </details>
+
                     <div class="mm-field custom-color-field">
-                      <label for="sr-custom-color">Custom Color Request</label>
-                      <textarea id="sr-custom-color" class="compact-textarea" name="customColorRequest" rows="1" placeholder="Don’t see your color? Describe it here. Special order lace may extend turnaround."></textarea>
+                      <label for="sr-custom-color">Custom Color Request <span class="opt-tag">Optional</span></label>
+                      <textarea id="sr-custom-color" class="compact-textarea" name="customColorRequest" rows="1" placeholder="Don’t see your color? Special orders may add time."></textarea>
                     </div>
                   </div>
 
                   <div class="glove-subgroup" data-simple-title="Glove Notes">
-                    <h5 class="glove-subgroup-title">Notes &amp; Photos</h5>
-
                     <div class="mm-field">
-                      <label for="sr-notes">Anything I should know about this glove?</label>
-                      <textarea id="sr-notes" class="compact-textarea" name="gloveNotes" rows="1" placeholder="Anything I should know about this glove?"></textarea>
+                      <label for="sr-notes">Notes <span class="opt-tag">Optional</span></label>
+                      <textarea id="sr-notes" class="compact-textarea" name="gloveNotes" rows="1" placeholder="Wear, damage, break-in preferences"></textarea>
                     </div>
 
                     <div class="mm-field glove-photo-field" data-photo-field>
-                      <label>Photos of the glove</label>
+                      <label>Photos <span class="opt-tag">Optional</span></label>
                       <div class="glove-photo-row" data-photo-row>
                         <button type="button" class="glove-photo-add" data-photo-add aria-label="Add photos">+</button>
                       </div>
-                      <div class="note">Optional, up to 6. They upload after you submit the request.</div>
+                      <div class="note">Up to 6. They upload after you submit.</div>
                       <input type="file" accept="image/*" multiple hidden data-photo-input>
                     </div>
                   </div>
@@ -267,108 +256,100 @@ body_class: inner
               <div id="additionalGloves" class="additional-gloves" aria-live="polite"></div>
 
               <div class="mm-actions glove-add-actions">
-                <button id="addGloveBtn" class="btn btn-secondary" type="button">Add another glove</button>
+                <button id="addGloveBtn" class="btn btn-secondary" type="button">+ Add another glove</button>
               </div>
             </div>
           </div>
 
           <div class="service-section">
-            <h3 class="service-section-title">Drop-Off Method</h3>
+            <div class="service-section-head">
+              <h3 class="service-section-title">Drop-Off</h3>
+              <p class="service-help">How is the glove getting to me?</p>
+            </div>
             <div class="service-section-body">
-              <div class="dropoff-guidance">
-                <div class="mm-status-message">
-                  <strong>Local drop-off:</strong> I will coordinate the handoff after reviewing the request.
-                </div>
-                <div class="mm-status-message">
-                  <strong>Shipping:</strong> enter the return address for the glove. Shipping instructions are sent after estimate approval.
-                </div>
-              </div>
-
               <div class="mm-field" id="dropOffGroup">
-                <div class="group-label">Drop-Off Method <span class="req-badge">Required</span></div>
-                <div class="mm-choice-list">
-                  <label class="mm-choice"><input type="radio" name="dropOffMethod" value="Local Drop-Off"> <span>Local Drop-Off</span></label>
-                  <label class="mm-choice"><input type="radio" name="dropOffMethod" value="Shipped to Murph’s Mitt Maintenance"> <span>Shipped to Murph’s Mitts</span></label>
+                <div class="mm-choice-list mm-choice-tiles is-2">
+                  <label class="mm-choice"><input type="radio" name="dropOffMethod" value="Local Drop-Off"> <span><strong>Local Drop-Off</strong><small>I'll coordinate the handoff after reviewing your request.</small></span></label>
+                  <label class="mm-choice"><input type="radio" name="dropOffMethod" value="Shipped to Murph’s Mitt Maintenance"> <span><strong>Ship It to Me</strong><small>Shipping instructions come after you approve the estimate.</small></span></label>
                 </div>
               </div>
 
               <div id="shippingAddressWrap" class="shipping-address-wrap is-hidden">
                 <div class="mm-field">
-                  <label for="sr-street">Street Address <span class="req-badge">Required</span></label>
-                  <input id="sr-street" name="streetAddress" type="text" placeholder="Street Address">
+                  <label for="sr-street">Return Street Address</label>
+                  <input id="sr-street" name="streetAddress" type="text" autocomplete="street-address" placeholder="Street Address">
                 </div>
 
-                <div class="mm-grid-2">
+                <div class="shipping-csz-grid">
                   <div class="mm-field">
-                    <label for="sr-city">City <span class="req-badge">Required</span></label>
-                    <input id="sr-city" name="city" type="text" placeholder="City">
+                    <label for="sr-city">City</label>
+                    <input id="sr-city" name="city" type="text" autocomplete="address-level2" placeholder="City">
                   </div>
 
                   <div class="mm-field">
-                    <label for="sr-state">State <span class="req-badge">Required</span></label>
-                    <input id="sr-state" name="state" type="text" placeholder="State">
+                    <label for="sr-state">State</label>
+                    <input id="sr-state" name="state" type="text" autocomplete="address-level1" placeholder="State">
                   </div>
-                </div>
 
-                <div class="mm-field">
-                  <label for="sr-zip">Zip Code <span class="req-badge">Required</span></label>
-                  <input id="sr-zip" name="zipCode" type="text" inputmode="numeric" placeholder="Zip Code">
+                  <div class="mm-field">
+                    <label for="sr-zip">Zip</label>
+                    <input id="sr-zip" name="zipCode" type="text" inputmode="numeric" autocomplete="postal-code" placeholder="Zip">
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           <div class="service-section">
-            <h3 class="service-section-title">Final Details</h3>
+            <div class="service-section-head">
+              <h3 class="service-section-title">Last Few Things</h3>
+              <p class="service-help">Both are optional.</p>
+            </div>
             <div class="service-section-body">
-              <p class="service-help">Add optional tagging and referral details, then submit the request.</p>
-
               <div class="mm-field">
-                <label for="sr-social">If I post a video of your glove and you'd like to be tagged, enter your platform + username</label>
-                <input id="sr-social" name="socialTag" type="text" placeholder="Example: tiktok @murphsmitts">
+                <label for="sr-social">Want to be tagged if I post your glove?</label>
+                <input id="sr-social" name="socialTag" type="text" placeholder="Platform + username, e.g. TikTok @murphsmitts">
               </div>
 
               <div class="mm-field">
                 <label>How did you hear about me?</label>
-                <div class="mm-choice-list">
+                <div class="mm-choice-list mm-choice-chips">
                   <label class="mm-choice"><input type="radio" name="referralSource" value="TikTok"> <span>TikTok</span></label>
-                  <label class="mm-choice"><input type="radio" name="referralSource" value="Insta"> <span>Insta</span></label>
+                  <label class="mm-choice"><input type="radio" name="referralSource" value="Insta"> <span>Instagram</span></label>
                   <label class="mm-choice"><input type="radio" name="referralSource" value="Facebook"> <span>Facebook</span></label>
                   <label class="mm-choice"><input type="radio" name="referralSource" value="Referral"> <span>Referral</span></label>
                   <label class="mm-choice"><input type="radio" name="referralSource" value="The Craftsman"> <span>The Craftsman</span></label>
                   <label class="mm-choice"><input type="radio" name="referralSource" value="Google"> <span>Google</span></label>
                   <label class="mm-inline-other">
                     <span class="mm-choice"><input type="radio" name="referralSource" value="Other"> <span>Other:</span></span>
-                    <input id="referralOtherText" type="text" placeholder="Please tell me where">
+                    <input id="referralOtherText" type="text" placeholder="Where?">
                   </label>
                 </div>
               </div>
-
-              <div class="turnaround-expectation" id="turnaroundGroup">
-                <input id="sr-turnaround" name="turnaroundAck" type="checkbox" checked hidden>
-                <p>Turnaround varies by workload, glove condition, lace availability, and shipping time. I will review the request and confirm the estimate before any work starts.</p>
-              </div>
-
-              <div class="mm-actions">
-                <button id="serviceSubmitBtn" class="btn btn-primary" type="submit">Submit Service Request</button>
-              </div>
-
-              <div id="serviceSuccessCard" class="service-success-card">
-                <h3>Request received.</h3>
-                <p id="serviceSuccessOrder"></p>
-                <ul>
-                  <li>Your service request has been recorded.</li>
-                  <li>A confirmation email was sent. Check spam or junk if you do not see it.</li>
-                  <li>I will review the request and follow up with an estimate.</li>
-                  <li>No work starts until you approve the estimate.</li>
-                  <li>I may ask for photos if I need a better look at the glove.</li>
-                </ul>
-              </div>
-
-              <div class="note service-request-note">
-                This form is intended for actual service requests (placing an order). Please direct general questions to the questions tab.
-              </div>
             </div>
+          </div>
+
+          <div class="service-submit-bar">
+            <div class="turnaround-expectation" id="turnaroundGroup">
+              <input id="sr-turnaround" name="turnaroundAck" type="checkbox" checked hidden>
+              <p>Turnaround varies by workload, glove condition, lace availability, and shipping. I'll review your request and confirm an estimate before any work starts.</p>
+            </div>
+
+            <div class="mm-actions">
+              <button id="serviceSubmitBtn" class="btn btn-primary" type="submit">Submit Service Request</button>
+            </div>
+          </div>
+
+          <div id="serviceSuccessCard" class="service-success-card">
+            <h3>Request received.</h3>
+            <p id="serviceSuccessOrder"></p>
+            <ul>
+              <li>Your service request has been recorded.</li>
+              <li>A confirmation email was sent. Check spam or junk if you do not see it.</li>
+              <li>I will review the request and follow up with an estimate.</li>
+              <li>No work starts until you approve the estimate.</li>
+              <li>I may ask for photos if I need a better look at the glove.</li>
+            </ul>
           </div>
         </form>
       </div>
@@ -525,99 +506,90 @@ body_class: inner
         </div>
         <div class="glove-card-body">
           <div class="glove-subgroup" data-simple-title="Glove Details">
-            <h5 class="glove-subgroup-title">Basics</h5>
-            <p class="service-help">Add the details for this glove only. Contact and drop-off info stays shared.</p>
-
-            <div class="mm-field">
-              <label>Brand / Model (if known)</label>
-              <input name="brandModel" type="text" placeholder="Example: Nokona AMG1200, Rawlings HoH PRO7175SB-2WSS">
-            </div>
-
             <div class="mm-field" data-glove-type-group>
-              <div class="group-label">Glove Type <span class="req-badge">Required</span></div>
-              <div class="mm-choice-list">
+              <div class="group-label">Glove Type</div>
+              <div class="mm-choice-list mm-choice-tiles is-3">
                 <label class="mm-choice"><input type="radio" name="gloveType-${index}" value="Fielders Glove"> <span>Fielders Glove</span></label>
                 <label class="mm-choice"><input type="radio" name="gloveType-${index}" value="Catchers Mitt"> <span>Catchers Mitt</span></label>
                 <label class="mm-choice"><input type="radio" name="gloveType-${index}" value="First Base Mitt"> <span>First Base Mitt</span></label>
               </div>
             </div>
 
-            <div class="mm-field is-hidden" data-web-type-wrap>
-              <label>Web Type (Fielders Gloves Only) <span class="req-badge">Required</span></label>
-              <div class="note">Trapeze and Modified Trapeze webs require additional lace and labor and may be priced higher.</div>
-              <select name="webType">
-                <option value="">Choose</option>
-                <option value="Basket (Fully Closed) Web">Basket (Fully Closed) Web</option>
-                <option value="I-Web">I-Web</option>
-                <option value="H-Web">H-Web</option>
-                <option value="Modified Trapeze Web">Modified Trapeze Web</option>
-                <option value="Trapeze Web">Trapeze Web</option>
-                <option value="Single Post Web">Single Post Web</option>
-                <option value="Two-Piece Web">Two-Piece Web</option>
-                <option value="Other / Not Sure">Other / Not Sure</option>
-              </select>
+            <div class="mm-grid-2 glove-basics-grid">
+              <div class="mm-field">
+                <label>Brand / Model <span class="opt-tag">Optional</span></label>
+                <input name="brandModel" type="text" placeholder="e.g. Wilson A2000 1786">
+              </div>
+
+              <div class="mm-field is-hidden" data-web-type-wrap>
+                <label>Web Type</label>
+                <select name="webType">
+                  <option value="">Choose</option>
+                  <option value="Basket (Fully Closed) Web">Basket (Fully Closed) Web</option>
+                  <option value="I-Web">I-Web</option>
+                  <option value="H-Web">H-Web</option>
+                  <option value="Modified Trapeze Web">Modified Trapeze Web</option>
+                  <option value="Trapeze Web">Trapeze Web</option>
+                  <option value="Single Post Web">Single Post Web</option>
+                  <option value="Two-Piece Web">Two-Piece Web</option>
+                  <option value="Other / Not Sure">Other / Not Sure</option>
+                </select>
+                <div class="note">Trapeze webs take extra lace and labor and may cost more.</div>
+              </div>
             </div>
           </div>
 
           <div class="glove-subgroup" data-simple-title="Services">
-            <h5 class="glove-subgroup-title">Services</h5>
-
             <div class="mm-field" data-services-group>
-              <div class="group-label">Services Requested <span class="req-badge">Required</span></div>
-              <div class="mm-choice-list">
+              <div class="group-label">Services</div>
+              <div class="mm-choice-list mm-choice-tiles">
                 <label class="mm-choice"><input type="checkbox" name="servicesRequested" value="Relacing"> <span>Relacing</span></label>
                 <label class="mm-choice"><input type="checkbox" name="servicesRequested" value="Cleaning + Conditioning"> <span>Cleaning + Conditioning</span></label>
                 <label class="mm-choice"><input type="checkbox" name="servicesRequested" value="Cleaning + Conditioning + Relacing"> <span>Cleaning + Conditioning + Relacing</span></label>
-                        <label class="mm-choice"><input type="checkbox" name="servicesRequested" value="Lace Repair"> <span>Lace Repair</span></label>
+                <label class="mm-choice"><input type="checkbox" name="servicesRequested" value="Lace Repair"> <span>Lace Repair</span></label>
                 <label class="mm-choice"><input type="checkbox" name="servicesRequested" value="ShockTec Air2Gel Palm Pad"> <span>ShockTec Air2Gel Palm Pad</span></label>
                 <label class="mm-choice"><input type="checkbox" name="servicesRequested" value="Thumb Loop Replacement"> <span>Thumb Loop Replacement</span></label>
                 <label class="mm-choice"><input type="checkbox" name="servicesRequested" value="Pinky Loop Replacement"> <span>Pinky Loop Replacement</span></label>
                 <label class="mm-choice"><input type="checkbox" name="servicesRequested" value="Web Replacement"> <span>Web Replacement</span></label>
                 <label class="mm-inline-other">
                   <span class="mm-choice"><input type="checkbox" value="Other" data-service-other-check> <span>Other:</span></span>
-                  <input type="text" placeholder="Describe other requested work" data-service-other-text>
+                  <input type="text" placeholder="Describe other work" data-service-other-text>
                 </label>
               </div>
             </div>
           </div>
 
           <div class="glove-subgroup" data-simple-title="Lace Color Selection">
-            <h5 class="glove-subgroup-title">Lace</h5>
-
             <div class="mm-grid-2 lace-select-grid">
               <div class="mm-field">
-                <label>Primary Lace Color <span class="req-badge">Required</span></label>
-                <div class="note">Choose the main color for the full relace.</div>
+                <label>Lace Color</label>
                 <select name="primaryLaceColor" data-lace-select="primary">${cloneLaceOptions("primary")}</select>
               </div>
 
               <div class="mm-field">
-                <label>Secondary / Accent Lace Color</label>
-                <div class="note">Leave blank for a single-color relace.</div>
+                <label>Accent Color <span class="opt-tag">Optional</span></label>
                 <select name="secondaryLaceColor" data-lace-select="secondary">${cloneLaceOptions("secondary")}</select>
               </div>
             </div>
 
             <div class="mm-field custom-color-field">
-              <label>Custom Color Request</label>
-              <textarea class="compact-textarea" name="customColorRequest" rows="1" placeholder="Don’t see your color? Describe it here. Special order lace may extend turnaround."></textarea>
+              <label>Custom Color Request <span class="opt-tag">Optional</span></label>
+              <textarea class="compact-textarea" name="customColorRequest" rows="1" placeholder="Don’t see your color? Special orders may add time."></textarea>
             </div>
           </div>
 
           <div class="glove-subgroup" data-simple-title="Glove Notes">
-            <h5 class="glove-subgroup-title">Notes &amp; Photos</h5>
-
             <div class="mm-field">
-              <label>Anything I should know about this glove?</label>
-              <textarea class="compact-textarea" name="gloveNotes" rows="1" placeholder="Anything I should know about this glove?"></textarea>
+              <label>Notes <span class="opt-tag">Optional</span></label>
+              <textarea class="compact-textarea" name="gloveNotes" rows="1" placeholder="Wear, damage, break-in preferences"></textarea>
             </div>
 
             <div class="mm-field glove-photo-field" data-photo-field>
-              <label>Photos of the glove</label>
+              <label>Photos <span class="opt-tag">Optional</span></label>
               <div class="glove-photo-row" data-photo-row>
                 <button type="button" class="glove-photo-add" data-photo-add aria-label="Add photos">+</button>
               </div>
-              <div class="note">Optional, up to 6. They upload after you submit the request.</div>
+              <div class="note">Up to 6. They upload after you submit.</div>
               <input type="file" accept="image/*" multiple hidden data-photo-input>
             </div>
           </div>

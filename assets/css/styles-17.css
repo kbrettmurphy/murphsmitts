@@ -2541,3 +2541,193 @@ h1.mm-section-title{ font-size: clamp(30px, 4.4vw, 44px); }
   .care-article-back{ margin-bottom: 22px; }
   .care-steps li{ padding-left: 38px; }
 }
+
+/* --------------------------------------------------------------------------
+   Service request form — flow pass (scoped to #serviceRequestForm)
+   Numbered step cards, tappable choice tiles/chips, "Optional" tags instead
+   of red required badges. Markup hooks (IDs/names) are unchanged.
+   -------------------------------------------------------------------------- */
+#serviceRequestForm{
+  gap: 14px;
+  counter-reset: srstep;
+}
+#serviceRequestForm .required-note{ font-size: 13.5px; line-height: 1.5; }
+
+#serviceRequestForm .opt-tag{
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--faint);
+  vertical-align: 1px;
+}
+#serviceRequestForm .required-note .opt-tag{ margin-left: 2px; }
+
+/* Step cards */
+#serviceRequestForm .service-section{
+  counter-increment: srstep;
+  margin-top: 0;
+  padding: 22px;
+  background: var(--surface);
+  border: 1px solid var(--hairline-soft);
+  border-radius: var(--radius-lg);
+}
+#serviceRequestForm .service-section-head{
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  column-gap: 12px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+#serviceRequestForm .service-section-head::before{
+  content: counter(srstep);
+  grid-row: span 2;
+  align-self: start;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #fff;
+  font-family: var(--font-brand);
+  font-size: 12px;
+  font-weight: 600;
+}
+#serviceRequestForm .service-section-title{ margin: 0; line-height: 26px; }
+#serviceRequestForm .service-section-head .service-help{ margin-top: 1px; }
+#serviceRequestForm .service-section-body{ gap: 18px; }
+#serviceRequestForm .mm-field > .service-help{ margin: -1px 0 3px; }
+
+/* Glove card: quiet hairline between subgroups instead of eyebrow titles */
+#serviceRequestForm .glove-card-body{ gap: 0; }
+#serviceRequestForm .glove-subgroup{ gap: 16px; padding: 18px 0; }
+#serviceRequestForm .glove-subgroup:first-child{ padding-top: 0; }
+#serviceRequestForm .glove-subgroup:last-child{ padding-bottom: 0; }
+#serviceRequestForm .glove-subgroup + .glove-subgroup{ border-top: 1px solid var(--hairline-soft); }
+#serviceRequestForm .glove-basics-grid{ grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+#serviceRequestForm .glove-request-card[data-glove-section]{ border: 1px solid var(--hairline-soft); }
+#serviceRequestForm .inline-lace-reference summary{ font-size: 13px; }
+#serviceRequestForm .glove-add-actions{ margin-top: 0; }
+
+/* Choice tiles (glove type, services, drop-off) */
+#serviceRequestForm .mm-choice-tiles{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+}
+#serviceRequestForm .mm-choice-tiles.is-3{ grid-template-columns: repeat(3, 1fr); }
+#serviceRequestForm .mm-choice-tiles.is-2{ grid-template-columns: repeat(2, 1fr); }
+#serviceRequestForm .mm-choice-tiles > .mm-choice,
+#serviceRequestForm .mm-choice-tiles > .mm-inline-other{
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 520;
+  line-height: 1.3;
+  transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+}
+#serviceRequestForm .mm-choice-tiles > .mm-choice{ display: flex; gap: 9px; }
+#serviceRequestForm .mm-choice-tiles > .mm-choice:hover,
+#serviceRequestForm .mm-choice-tiles > .mm-inline-other:hover{ border-color: rgba(9,47,77,.32); }
+#serviceRequestForm .mm-choice-tiles > .mm-choice:has(input:checked),
+#serviceRequestForm .mm-choice-tiles > .mm-inline-other:has(.mm-choice input:checked){
+  border-color: var(--navy);
+  background: rgba(9,47,77,.05);
+  box-shadow: inset 0 0 0 1px var(--navy);
+}
+#serviceRequestForm .mm-choice-tiles > .mm-choice input{ flex-shrink: 0; }
+#serviceRequestForm .mm-choice-tiles > .mm-inline-other{
+  grid-column: 1 / -1;
+  padding: 5px 6px 5px 12px;
+}
+#serviceRequestForm .mm-choice-tiles > .mm-inline-other .mm-choice{ font-size: 14px; font-weight: 520; }
+#serviceRequestForm .mm-inline-other input[type="text"]{ max-width: none; border-color: var(--hairline-soft); }
+
+/* Drop-off tiles carry their own explanation */
+#serviceRequestForm .mm-choice-tiles.is-2 > .mm-choice{ align-items: flex-start; padding: 12px 14px; }
+#serviceRequestForm .mm-choice-tiles.is-2 > .mm-choice input{ margin-top: 2px; }
+#serviceRequestForm .mm-choice-tiles.is-2 > .mm-choice > span{ display: flex; flex-direction: column; gap: 2px; }
+#serviceRequestForm .mm-choice-tiles.is-2 strong{ font-weight: 600; color: var(--navy); }
+#serviceRequestForm .mm-choice-tiles.is-2 small{ font-size: 12.5px; font-weight: 400; color: var(--muted); line-height: 1.4; }
+
+/* Referral chips (pill, radio visually hidden but focusable) */
+#serviceRequestForm .mm-choice-chips{ gap: 8px; }
+#serviceRequestForm .mm-choice-chips .mm-choice{
+  position: relative;
+  padding: 5px 13px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  font-size: 13.5px;
+  font-weight: 520;
+  transition: border-color .15s ease, background-color .15s ease, color .15s ease;
+}
+#serviceRequestForm .mm-choice-chips .mm-choice input{
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+#serviceRequestForm .mm-choice-chips .mm-choice:hover{ border-color: rgba(9,47,77,.32); }
+#serviceRequestForm .mm-choice-chips .mm-choice:has(input:checked){
+  border-color: var(--navy);
+  background: var(--navy);
+  color: #fff;
+}
+#serviceRequestForm .mm-choice-chips .mm-choice:has(input:focus-visible){ box-shadow: 0 0 0 3px var(--focus-ring); }
+#serviceRequestForm .mm-choice-chips .mm-inline-other{ gap: 8px; }
+
+/* Opt-ins grouped in one quiet panel */
+#serviceRequestForm .service-optins{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--tint);
+  border-radius: var(--radius-md);
+}
+#serviceRequestForm .service-optins .mm-field{ gap: 0; }
+#serviceRequestForm .service-optins .mm-choice{ font-size: 13.5px; font-weight: 560; color: var(--navy); }
+#serviceRequestForm .service-optins .sms-optin-disclosure,
+#serviceRequestForm .service-optins .newsletter-optin-disclosure{ margin: 4px 0 0 22px; }
+
+/* Shipping address: city / state / zip on one row */
+#serviceRequestForm .shipping-csz-grid{
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 12px;
+}
+
+/* Submit footer */
+#serviceRequestForm .service-submit-bar{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  padding: 4px 4px 0;
+}
+#serviceRequestForm .service-submit-bar .turnaround-expectation{ flex: 1; max-width: 420px; }
+#serviceRequestForm .service-submit-bar .mm-actions{ margin-top: 0; flex-shrink: 0; }
+
+@media (max-width: 640px){
+  #serviceRequestForm .service-section{ padding: 18px 16px; border-radius: var(--radius-md); }
+  #serviceRequestForm .mm-choice-tiles{ grid-template-columns: repeat(2, 1fr); }
+  #serviceRequestForm .mm-choice-tiles.is-2{ grid-template-columns: 1fr; }
+  /* Glove type reads as a segmented control on phones: tile highlight shows the pick */
+  #serviceRequestForm .mm-choice-tiles.is-3 > .mm-choice{ position: relative; justify-content: center; text-align: center; padding: 8px 6px; font-size: 13.5px; }
+  #serviceRequestForm .mm-choice-tiles.is-3 > .mm-choice input{ position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+  #serviceRequestForm .mm-choice-tiles.is-3 > .mm-choice:has(input:focus-visible){ box-shadow: 0 0 0 3px var(--focus-ring); }
+  #serviceRequestForm .mm-choice-tiles > .mm-choice{ font-size: 13.5px; }
+  #serviceRequestForm .shipping-csz-grid{ grid-template-columns: 1fr 1fr; }
+  #serviceRequestForm .shipping-csz-grid > .mm-field:first-child{ grid-column: 1 / -1; }
+  #serviceRequestForm .service-submit-bar{ flex-direction: column; align-items: stretch; }
+  #serviceRequestForm .service-submit-bar .turnaround-expectation{ max-width: none; }
+  #serviceRequestForm .service-submit-bar .btn-primary{ width: 100%; min-height: 44px; }
+}
