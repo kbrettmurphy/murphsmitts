@@ -8987,3 +8987,46 @@ html.admin-booting.admin-boot-done .admin-boot-screen{
     animation:none;
   }
 }
+
+/* =========================
+   Hide-from-gallery checkbox on gallery uploads
+   (Gallery Uploader card + order "Add to Gallery" sheet). Scoped; the
+   order sheet's full-width input rule must not stretch the checkbox.
+   ========================= */
+.gallery-hide-upload-row{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  margin:0;
+  font-size:.78rem;
+  font-weight:600;
+  line-height:1.35;
+  cursor:pointer;
+}
+.gallery-hide-upload-row input[type="checkbox"],
+.order-gallery-upload-fields .gallery-hide-upload-row input[type="checkbox"]{
+  flex:0 0 auto;
+  width:16px;
+  min-width:16px;
+  height:16px;
+  min-height:16px;
+  margin:1px 0 0;
+  padding:0;
+  accent-color:var(--navy);
+}
+.gallery-hide-upload-row .muted,
+.gallery-upload-card .gallery-hide-upload-row .muted{
+  font-size:inherit;
+  font-weight:500;
+}
+.gallery-hide-upload-row,
+.gallery-upload-card .gallery-hide-upload-row{
+  color:var(--navy);
+}
+.gallery-hide-upload-row .muted,
+.gallery-upload-card .gallery-hide-upload-row .muted{
+  color:rgba(9,47,77,.64);
+}
+.order-gallery-upload-fields .gallery-hide-upload-row{
+  margin-top:3px;
+}
