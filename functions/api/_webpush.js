@@ -52,7 +52,7 @@ async function vapidJwt(env, audience) {
   const payload = bytesToB64u(enc.encode(JSON.stringify({
     aud: audience,
     exp: Math.floor(Date.now() / 1000) + 12 * 3600,
-    sub: "mailto:murphsmitts@gmail.com"
+    sub: "mailto:brett@murphsmitts.com"
   })));
   const sig = await crypto.subtle.sign(
     { name: "ECDSA", hash: "SHA-256" }, key, enc.encode(`${header}.${payload}`)
