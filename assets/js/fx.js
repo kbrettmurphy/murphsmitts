@@ -262,7 +262,17 @@
         const gap = pinSection.getBoundingClientRect().bottom - spacer.getBoundingClientRect().top;
         p = clamp(gap / Math.max(1, spacer.offsetHeight));
       } else {
-        p = clamp((innerHeight * opts.from - r.top) / (innerHeight * (opts.from - opts.to)));
+        // If the deck rides in a section sheet, that sheet pins (and the deck
+        // stops rising) once its bottom is ~70% down the screen. Finish the
+        // stack by then, or the last card never lands.
+        let endTop = innerHeight * opts.to;
+        const sheet = deck.closest(".fx-sheet");
+        if (sheet && sheet.style.top) {
+          const deckInSheet = r.top - sheet.getBoundingClientRect().top;
+          endTop = Math.max(endTop, parseFloat(sheet.style.top) + deckInSheet + 4);
+        }
+        const startTop = Math.max(innerHeight * opts.from, endTop + innerHeight * 0.3);
+        p = clamp((startTop - r.top) / Math.max(1, startTop - endTop));
       }
       const hold = pinned() ? opts.hold || 1 : 1; // desktop pacing unchanged
       const e = stack.map((_, i) => (i === 0 ? 1 : smooth(clamp((p * (n - 1) - (i - 1)) / hold))));
