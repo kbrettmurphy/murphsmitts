@@ -250,8 +250,8 @@
      native horizontal scroller (swipe on phones, trackpad, keyboard), and
      each photo turns away in 3D by its distance from the center.
      Desktop mouse: the cursor's left-right position across the strip IS the
-     wheel position (8% dead zone each side), eased so it glides and stops
-     when the mouse stops. Photos stay the same buttons the lightbox uses. */
+     wheel position (8% dead zone each side), eased so it glides; when the
+     mouse rests it settles onto the nearest photo. Photos stay the same buttons the lightbox uses. */
   const setupWheel = (strip, itemSel) => {
     if (!strip) return;
     strip.classList.add("fx-wheel");
@@ -260,6 +260,7 @@
     let pos = 0;
     let target = null;
     let raf = 0;
+    let settle = 0;
     let paintQueued = false;
 
     const paint = () => {
@@ -303,7 +304,7 @@
         strip.scrollLeft = pos;
         return;
       }
-      pos += diff * 0.14;
+      pos += diff * 0.12;
       strip.scrollLeft = pos;
       raf = requestAnimationFrame(glide);
     };
@@ -314,11 +315,15 @@
         const r = strip.getBoundingClientRect();
         const t = Math.max(0, Math.min(1, ((e.clientX - r.left) / r.width - 0.08) / 0.84));
         const max = strip.scrollWidth - strip.clientWidth;
-        // Soft detents: lean 70% toward the nearest photo's centered position
-        // (photo i is centered at i * unit), so a photo settles dead center.
-        const raw = t * max;
-        const snapped = Math.round(raw / unit) * unit;
-        target = Math.max(0, Math.min(max, snapped + (raw - snapped) * 0.3));
+        target = t * max; // follows the cursor continuously (no jumps)
+        // Once the mouse rests, ease onto the nearest photo (photo i is
+        // centered at i * unit) so one sits dead center, ready to click.
+        clearTimeout(settle);
+        settle = setTimeout(() => {
+          if (target === null) return;
+          target = Math.max(0, Math.min(max, Math.round(target / unit) * unit));
+          if (!raf) raf = requestAnimationFrame(glide);
+        }, 160);
         if (!raf) {
           pos = strip.scrollLeft;
           raf = requestAnimationFrame(glide);
@@ -348,8 +353,8 @@
 
   /* ---------- 7. Section sheets (homepage experiment) ----------
      Each homepage section rides on a full-width "sheet". A sheet scrolls
-     normally until its bottom reaches the bottom of the screen (or, if it's
-     short, until it reaches the header), then pins there while the next
+     normally until its bottom is ~70% down the screen (or, if it's short,
+     until it reaches the header), then pins there while the next
      sheet slides up over it; the covered sheet shrinks and dims slightly.
      Pinning only after a sheet has been fully seen means sections of any
      height work and nothing is hidden. Grouping is done here (no markup
@@ -379,7 +384,9 @@
     const header = () => parseFloat(getComputedStyle(root).getPropertyValue("--headerH")) || 52;
     const place = () => {
       const h = header();
-      tops = sheets.map((sh) => Math.min(h, innerHeight - sh.offsetHeight));
+      // Pin when the sheet's bottom is ~70% down the screen, so its last
+      // lines are at reading height when the next sheet starts to cover it.
+      tops = sheets.map((sh) => Math.min(h, innerHeight * 0.7 - sh.offsetHeight));
       sheets.forEach((sh, i) => {
         sh.style.top = `${Math.round(tops[i])}px`;
         sh.style.transformOrigin = `50% ${Math.round(Math.max(0, -tops[i]))}px`; // top of its visible part
@@ -391,7 +398,11 @@
       sheetsQueued = false;
       sheets.forEach((sh, i) => {
         const next = sheets[i + 1];
-        const t = next ? Math.min(1, Math.max(0, (innerHeight - next.getBoundingClientRect().top) / innerHeight)) : 0;
+        // Shrink only once the next sheet actually overlaps this one (its top
+        // is above this sheet's pinned bottom); earlier, the shrinking bottom
+        // edge pulled up and opened a gap.
+        const overlap = next ? tops[i] + sh.offsetHeight - next.getBoundingClientRect().top : 0;
+        const t = Math.min(1, Math.max(0, overlap / (innerHeight * 0.6)));
         sh.style.transform = t ? `scale(${(1 - t * 0.05).toFixed(4)})` : "";
         sh.style.setProperty("--fx-cover", t.toFixed(3));
       });
