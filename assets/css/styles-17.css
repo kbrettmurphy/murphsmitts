@@ -3041,13 +3041,15 @@ html.lenis{ scroll-behavior: auto; }
 }
 
 /* Section sheets (see section 7 in fx.js): homepage, Services, Relacing
-   guide, About. Each sheet is opaque with rounded top corners and a soft top
-   shadow so its edge reads as it slides over the one beneath. The surface
-   is a full-width layer behind the sheet, since inner pages sit in a
-   centered column. fx.js sets each sheet's sticky top and --fx-cover
+   guide, About, Process. Each sheet is opaque with rounded top corners and
+   a soft top shadow so its edge reads as it slides over the one beneath.
+   The surface is a full-width layer behind the sheet, since inner pages sit
+   in a centered column. fx.js sets each sheet's sticky top and --fx-cover
    (0 → 1) on the one being covered. Extra bottom room so each section is
-   fully seen, with air under it, before the next sheet arrives. */
-.fx-on .fx-sheets .fx-sheet{
+   fully seen, with air under it, before the next sheet arrives. The first
+   sheet (the homepage hero, or an inner page's intro) adds no padding, so
+   nothing on screen shifts when fx.js runs. */
+.fx-on .fx-sheet{
   position: sticky;
   isolation: isolate;    /* keeps the z-index:-1 surface inside the sheet */
   display: flow-root;    /* contain section margins so the sheet covers them */
@@ -3056,27 +3058,35 @@ html.lenis{ scroll-behavior: auto; }
   border-radius: 28px 28px 0 0;
   will-change: transform;
 }
-.fx-on .fx-sheets .fx-sheet::before,
-.fx-on .fx-sheets .fx-sheet::after{
+.fx-on .fx-sheet::before,
+.fx-on .fx-sheet::after{
   content: "";
   position: absolute;
   inset: 0 min(0px, calc(50% - 50vw));   /* full width even inside a centered column */
   border-radius: inherit;
   pointer-events: none;
 }
-.fx-on .fx-sheets .fx-sheet::before{
+.fx-on .fx-sheet::before{
   z-index: -1;
   background: var(--bg);
   box-shadow: 0 -1px 0 var(--hairline-soft), 0 -18px 40px -12px rgba(9, 47, 77, .10);
 }
-.fx-on .fx-sheets .fx-sheet::after{
+.fx-on .fx-sheet::after{
   background: rgba(9, 47, 77, .08);
   opacity: var(--fx-cover, 0);
 }
-.fx-on .fx-sheets .fx-sheet:first-child{ border-radius: 0; }
-.fx-on .fx-sheets .fx-sheet:first-child::before{ box-shadow: none; }
+.fx-on .fx-sheet.fx-sheet-first{ padding-top: 0; border-radius: 0; }
+.fx-on .fx-sheet.fx-sheet-first::before{ box-shadow: none; }
+.fx-on .hero.fx-sheet{ padding-bottom: 0; }
+/* Homepage: the hero stays pinned beneath the page; fill the gap above the
+   footer so it can't show through there. */
+.fx-on body.home .site-footer{
+  position: relative;
+  /* offset past the gap and spread 4px so no rounding seam lets it peek */
+  box-shadow: 0 calc(-1 * var(--section-gap) - 4px) 0 4px var(--bg);
+}
 /* Hairlines that used to separate these sections are now the sheet edges. */
 .fx-on .fx-sheets .mm-final-cta{ border-top: 0; }
 @media (max-width: 900px){
-  .fx-on .fx-sheets .fx-sheet{ border-radius: 20px 20px 0 0; }
+  .fx-on .fx-sheet{ border-radius: 20px 20px 0 0; }
 }

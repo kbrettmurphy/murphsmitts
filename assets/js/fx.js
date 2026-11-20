@@ -401,30 +401,33 @@
      a sheet has been fully seen means sections of any height work and
      nothing is hidden. Grouping is done here (no markup change):
        Homepage: hero | trust cues + latest article + newsletter | each
-         .home-section | final CTA.
-       Content pages (Services, Relacing guide, About): intro + first section
-         | each later top-level section.
-     Pages where people do things (Contact, Track, Gallery, For Sale) and
-     Process (has its own pinned stack) are left alone; pages with fewer
-     than two sheets skip themselves. The lightbox stays outside the sheets
-     (a transformed ancestor would break its position: fixed). */
+         .home-section | final CTA. The hero is NOT moved: it becomes a
+         sheet in place (moving an element restarts its CSS animations, so
+         the headline intro would replay — the "double clutch").
+       Content pages (Services, Relacing guide, About, Process): intro +
+         first section | each later top-level section (Process's pinned
+         stack, wrapped in .fx-pin-track by setupStack, is one sheet).
+     Pages where people do things (Contact, Track, Gallery, For Sale) are
+     left alone; pages with fewer than two sheets skip themselves. The
+     lightbox stays outside the sheets (a transformed ancestor would break
+     its position: fixed). */
   const sheetHost = document.querySelector(
-    "body.home main.home-sections, main.services-page, main.relacing-page, main.about-page"
+    "body.home main.home-sections, main.services-page, main.relacing-page, main.about-page, main.process-page"
   );
   let sheetStarts = [];
+  let heroSheet = null;
   if (sheetHost && body.classList.contains("home")) {
-    const heroEl = document.querySelector("body.home .hero");
-    if (heroEl) sheetHost.prepend(heroEl); // keep every sheet in one containing block
-    sheetStarts = [heroEl, sheetHost.querySelector(".home-trust-cues"), ...sheetHost.querySelectorAll(":scope > .home-section, :scope > .mm-final-cta")];
+    heroSheet = document.querySelector("body.home .hero");
+    sheetStarts = [sheetHost.querySelector(".home-trust-cues"), ...sheetHost.querySelectorAll(":scope > .home-section, :scope > .mm-final-cta")];
   } else if (sheetHost) {
     const first = sheetHost.firstElementChild;
-    sheetStarts = [first, ...Array.from(sheetHost.querySelectorAll(":scope > section")).filter((sec) => sec !== first)];
+    sheetStarts = [first, ...Array.from(sheetHost.querySelectorAll(":scope > section, :scope > .fx-pin-track")).filter((sec) => sec !== first)];
     // The first section rides with the intro above it.
     if (sheetStarts[1] && sheetStarts[1].previousElementSibling === first) sheetStarts.splice(1, 1);
   }
   sheetStarts = sheetStarts.filter(Boolean);
-  if (sheetStarts.length > 1) {
-    const sheets = sheetStarts.map((start, i) => {
+  if (sheetStarts.length + (heroSheet ? 1 : 0) > 1) {
+    const wrapped = sheetStarts.map((start, i) => {
       const sheet = document.createElement("div");
       sheet.className = "fx-sheet";
       start.before(sheet);
@@ -437,6 +440,9 @@
       return sheet;
     });
     sheetHost.classList.add("fx-sheets");
+    const sheets = heroSheet ? [heroSheet, ...wrapped] : wrapped;
+    sheets.forEach((sh) => sh.classList.add("fx-sheet"));
+    sheets[0].classList.add("fx-sheet-first");
 
     let tops = [];
     const header = () => parseFloat(getComputedStyle(root).getPropertyValue("--headerH")) || 52;
