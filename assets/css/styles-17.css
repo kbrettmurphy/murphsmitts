@@ -3007,6 +3007,14 @@ html.lenis{ scroll-behavior: auto; }
    setupWheel in fx.js). Photos turn away in 3D by distance from center; the
    edges fade out. Phones swipe and snap to center; desktop mouse scrubs by
    cursor position, so snapping is off there (it would fight the glide). */
+/* Hidden from first paint (the <head> snippet sets .fx-on) until fx.js has
+   laid the wheel out, then faded in, so the plain strip never flashes
+   before jumping into the wheel. If fx.js never loads, .fx-on is removed and
+   the strip shows as before. */
+.fx-on .process-gallery:not(.fx-wheel),
+.fx-on #homeGalleryPreview:not(.fx-wheel){ opacity: 0; }
+.fx-on .fx-wheel{ animation: mm-wheel-in .6s cubic-bezier(.22,1,.36,1) both; }
+@keyframes mm-wheel-in{ from{ opacity: 0; transform: translate3d(0, 14px, 0); } }
 .fx-on .fx-wheel{
   position: relative;    /* offsetLeft is measured from the strip */
   padding-block: 12px 16px;
