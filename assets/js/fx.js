@@ -110,7 +110,6 @@
     ".home-newsletter-copy",
     ".home-trust-panel > div",
     ".home-service-item",
-    ".home-process-step",
     ".home-actions",
     ".gallery-strip",
     ".reviews-grid",
@@ -191,7 +190,37 @@
     });
   }
 
-  /* ---------- 5. Magnetic CTAs (mouse only) ---------- */
+  /* ---------- 5. Stacking cards (homepage "How it works") ----------
+     Position is CSS sticky; this only feeds --fx-depth (0 → n) to each card
+     so the ones underneath shrink and dim as later cards slide over them. */
+  const stack = Array.from(document.querySelectorAll("body.home .home-process-step"));
+  if (stack.length > 1) {
+    let stackQueued = false;
+    const paintStack = () => {
+      stackQueued = false;
+      const rects = stack.map((el) => el.getBoundingClientRect());
+      let depth = 0;
+      for (let i = stack.length - 1; i >= 0; i--) {
+        if (i < stack.length - 1) {
+          // How far the next card has slid over this one: 0 = apart, 1 = landed.
+          const gap = rects[i + 1].top - rects[i].top;
+          const t = Math.min(1, Math.max(0, 1 - (gap - 16) / Math.max(1, rects[i].height)));
+          depth = t + depth * t;
+        }
+        stack[i].style.setProperty("--fx-depth", depth.toFixed(3));
+      }
+    };
+    const queueStack = () => {
+      if (stackQueued) return;
+      stackQueued = true;
+      requestAnimationFrame(paintStack);
+    };
+    addEventListener("scroll", queueStack, { passive: true });
+    addEventListener("resize", queueStack);
+    paintStack();
+  }
+
+  /* ---------- 6. Magnetic CTAs (mouse only) ---------- */
   if (finePointer) {
     document.querySelectorAll(".hero .btn-primary, .mm-final-cta .btn-primary").forEach((btn) => {
       let x = 0, y = 0, tx = 0, ty = 0, raf = 0;
