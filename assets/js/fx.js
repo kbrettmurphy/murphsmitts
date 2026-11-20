@@ -191,25 +191,23 @@
   }
 
   /* ---------- 5. Stacking cards (homepage "How it works") ----------
-     The steps start as a normal list. As the deck's top travels from 62% to
-     22% of the viewport, card 2 then card 3 slide up over card 1 (landing
-     16px apart), tracking the scroll 1:1 (no front-loaded easing). Cards
-     beneath get --fx-depth (0 → n) so they shrink and dim. The link under
-     the deck follows the last card so no gap opens above it. */
+     Card 1 sits alone on the deck; cards 2 and 3 wait just below its bottom
+     edge (hidden by a CSS mask) and rise onto it as the deck's top travels from
+     62% to 22% of the viewport, tracking the scroll 1:1. Cards beneath get
+     --fx-depth (0 → n) so they shrink and dim. */
   const deck = document.querySelector("body.home .home-process-grid");
   const stack = deck ? Array.from(deck.querySelectorAll(".home-process-step")) : [];
-  const follower = deck && deck.nextElementSibling && deck.nextElementSibling.matches(".home-actions") ? deck.nextElementSibling : null;
-  if (follower) follower.classList.add("fx-done"); // moves with the deck, not the reveal
   if (stack.length > 1) {
     const n = stack.length;
-    const PEEK = 16;
     const clamp = (v) => Math.min(1, Math.max(0, v));
     const smooth = (t) => t * t * (3 - 2 * t); // gentle in/out at each card's ends only
-    let shift = [];
+    let drop = [];
     const measure = () => {
-      // offsetTop ignores transforms, so this is the natural list layout.
+      // Distance that puts each card's top below the deck's fade band (32px
+      // under card 1's bottom edge). offsetTop ignores transforms.
       const base = stack[0].offsetTop;
-      shift = stack.map((el, i) => el.offsetTop - base - i * PEEK);
+      const cell = stack[0].offsetHeight;
+      drop = stack.map((el) => cell - (el.offsetTop - base) + 32);
     };
     let stackQueued = false;
     const paintStack = () => {
@@ -217,14 +215,13 @@
       const r = deck.getBoundingClientRect();
       if (r.bottom < -400 || r.top > innerHeight + 400) return;
       const p = clamp((innerHeight * 0.62 - r.top) / (innerHeight * 0.4));
-      const e = stack.map((_, i) => (i === 0 ? 0 : smooth(clamp(p * (n - 1) - (i - 1)))));
+      const e = stack.map((_, i) => (i === 0 ? 1 : smooth(clamp(p * (n - 1) - (i - 1)))));
       stack.forEach((el, i) => {
         let depth = 0;
         for (let j = i + 1; j < n; j++) depth += e[j];
-        el.style.transform = `translate3d(0, ${(-shift[i] * e[i]).toFixed(1)}px, 0) scale(${(1 - depth * 0.05).toFixed(4)})`;
+        el.style.transform = `translate3d(0, ${(drop[i] * (1 - e[i])).toFixed(1)}px, 0) scale(${(1 - depth * 0.05).toFixed(4)})`;
         el.style.setProperty("--fx-depth", depth.toFixed(3));
       });
-      if (follower) follower.style.transform = `translate3d(0, ${(-shift[n - 1] * e[n - 1]).toFixed(1)}px, 0)`;
     };
     const queueStack = () => {
       if (stackQueued) return;

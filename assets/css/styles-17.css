@@ -2868,21 +2868,34 @@ html.lenis{ scroll-behavior: auto; }
   will-change: transform;
 }
 
-/* Homepage "How it works": stacking cards. The steps start as a normal list;
-   as the section scrolls up the screen, cards 2 and 3 slide up over card 1
-   into a deck and the ones beneath shrink and dim. No pinning or extra
-   height. fx.js drives transform + --fx-depth.
+/* Homepage "How it works": stacking cards. Card 1 sits alone on the deck;
+   as the section scrolls up the screen, cards 2 and 3 rise out from under
+   its bottom edge and land on top, and the ones beneath shrink and dim. The
+   deck is its natural height (no pinning, no gap). fx.js drives transform +
+   --fx-depth.
    Gated on .fx-on, so reduced motion keeps the original 3-column grid. */
 .fx-on body.home .home-process-grid{
-  display: block;
-  max-width: 760px;
+  display: grid;
+  grid-template-columns: 1fr;
+  /* Cards waiting below are hidden; they fade in through a soft band just
+     under the deck's bottom edge. The box is grown by padding (cancelled by
+     negative margin) so card shadows aren't cut off at the sides. */
+  max-width: calc(760px + 80px);
+  padding: 40px 40px 32px;
+  margin: -40px -40px -32px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
 }
 .fx-on body.home .home-process-step{
+  grid-area: 1 / 1;      /* all cards share one cell: a deck */
   position: relative;    /* later cards paint over earlier ones */
   transform-origin: 50% 0;
   will-change: transform;
 }
-.fx-on body.home .home-process-step + .home-process-step{ margin-top: 16px; }
+.fx-on body.home .home-process-step:nth-child(2){ margin-top: 16px; }
+.fx-on body.home .home-process-step:nth-child(3){ margin-top: 32px; }
 .fx-on body.home .home-process-step > div{
   position: relative;
   display: grid;
@@ -2918,6 +2931,11 @@ html.lenis{ scroll-behavior: auto; }
 }
 .fx-on body.home .home-process-step h3{ align-self: end; margin-top: 4px; }
 @media (max-width: 900px){
+  .fx-on body.home .home-process-grid{
+    max-width: none;
+    padding-inline: 16px;    /* stay inside the 20px gutter: no page overflow */
+    margin-inline: -16px;
+  }
   .fx-on body.home .home-process-step > div{
     column-gap: 16px;
     min-height: 130px;
