@@ -192,8 +192,8 @@
 
   /* ---------- 5. Stacking cards (homepage "How it works") ----------
      No pinning: progress comes from where the deck sits in the viewport.
-     p = 0 when its top is near the bottom of the screen, 1 when it reaches
-     ~45% from the top. Later cards rise onto the deck in turn; cards beneath
+     p = 0 once the whole deck is on screen (top at 75%), 1 when it reaches
+     ~30% from the top. Later cards rise onto the deck in turn; cards beneath
      get --fx-depth (0 → n) so they shrink and dim. */
   const deck = document.querySelector("body.home .home-process-grid");
   const stack = deck ? Array.from(deck.querySelectorAll(".home-process-step")) : [];
@@ -206,7 +206,7 @@
       stackQueued = false;
       const r = deck.getBoundingClientRect();
       if (r.bottom < -200 || r.top > innerHeight + 200) return;
-      const p = clamp((innerHeight * 0.92 - r.top) / (innerHeight * 0.47));
+      const p = clamp((innerHeight * 0.75 - r.top) / (innerHeight * 0.45));
       const e = stack.map((_, i) => (i === 0 ? 1 : ease(clamp((p / 0.9) * (n - 1) - (i - 1)))));
       stack.forEach((el, i) => {
         let depth = 0;
