@@ -2868,29 +2868,31 @@ html.lenis{ scroll-behavior: auto; }
   will-change: transform;
 }
 
-/* Homepage "How it works": stacking cards. Each step pins under the header,
-   the next slides over it, and the ones beneath shrink and dim (fx.js sets
-   --fx-depth). Gated on .fx-on, so reduced motion keeps the original grid. */
-.fx-on body.home .home-process-grid{
+/* Homepage "How it works": stacking cards. The heading + deck pin while the
+   track scrolls past; cards 2 and 3 rise from below and land on the deck,
+   and the ones beneath shrink and dim. fx.js drives transform + --fx-depth.
+   Gated on .fx-on, so reduced motion keeps the original 3-column grid. */
+.fx-on body.home .home-process-track::after{
+  content: "";           /* scroll distance while the panel is pinned */
   display: block;
+  height: 110vh;
+}
+.fx-on body.home .home-process-pin{
+  position: sticky;
+  top: calc(var(--headerH) + 6vh);
+}
+.fx-on body.home .home-process-grid{
+  display: grid;
+  grid-template-columns: 1fr;
   max-width: 760px;
 }
-/* Spacer: the finished stack holds briefly before scrolling on. (Spacing is
-   real content, not padding/margin-bottom, which would unpin cards early.) */
-.fx-on body.home .home-process-grid::after{
-  content: "";
-  display: block;
-  height: 8vh;
-}
 .fx-on body.home .home-process-step{
-  position: sticky;
-  top: calc(var(--headerH) + 28px);
+  grid-area: 1 / 1;      /* all cards share one cell: a deck */
   transform-origin: 50% 0;
-  transform: scale(calc(1 - var(--fx-depth, 0) * .05));
+  will-change: transform;
 }
-.fx-on body.home .home-process-step + .home-process-step{ margin-top: 22vh; }
-.fx-on body.home .home-process-step:nth-child(2){ top: calc(var(--headerH) + 44px); }
-.fx-on body.home .home-process-step:nth-child(3){ top: calc(var(--headerH) + 60px); }
+.fx-on body.home .home-process-step:nth-child(2){ margin-top: 16px; }
+.fx-on body.home .home-process-step:nth-child(3){ margin-top: 32px; }
 .fx-on body.home .home-process-step > div{
   position: relative;
   display: grid;
@@ -2926,7 +2928,6 @@ html.lenis{ scroll-behavior: auto; }
 }
 .fx-on body.home .home-process-step h3{ align-self: end; margin-top: 4px; }
 @media (max-width: 900px){
-  .fx-on body.home .home-process-step + .home-process-step{ margin-top: 16vh; }
   .fx-on body.home .home-process-step > div{
     column-gap: 16px;
     min-height: 130px;
