@@ -213,10 +213,16 @@
     const pinSection = opts.pinMobile ? deck.closest("section") : null;
     let spacer = null;
     if (pinSection) {
+      // Wrap section + spacer so the sticky hold ends when the spacer does
+      // (otherwise it stays pinned to the end of the page's container and
+      // everything below scrolls behind it).
+      const track = document.createElement("div");
+      track.className = "fx-pin-track";
+      pinSection.before(track);
       spacer = document.createElement("div");
       spacer.className = "fx-pin-spacer";
       spacer.setAttribute("aria-hidden", "true");
-      pinSection.after(spacer);
+      track.append(pinSection, spacer);
     }
     const pinned = () => !!pinSection && mq.matches;
     const measure = () => {
