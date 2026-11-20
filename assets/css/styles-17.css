@@ -2788,7 +2788,6 @@ html.lenis{ scroll-behavior: auto; }
   .reviews-grid,
   .mm-final-actions,
   .service-item,
-  .process-journey-item,
   .process-shot,
   .process-review-item,
   .relacing-info-item,
@@ -2813,7 +2812,6 @@ html.lenis{ scroll-behavior: auto; }
   .reviews-grid,
   .mm-final-actions,
   .service-item,
-  .process-journey-item,
   .process-shot,
   .process-review-item,
   .relacing-info-item,
@@ -2890,6 +2888,8 @@ html.lenis{ scroll-behavior: auto; }
 }
 .fx-on body.home .home-process-step{
   grid-area: 1 / 1;      /* all cards share one cell: a deck */
+  align-self: start;     /* fx.js gives every card the tallest card's height */
+  display: grid;         /* the inner card fills that height */
   position: relative;    /* later cards paint over earlier ones */
   transform-origin: 50% 0;
   will-change: transform;
@@ -2943,4 +2943,64 @@ html.lenis{ scroll-behavior: auto; }
     border-radius: var(--radius-md);
   }
   .fx-on body.home .home-process-step span{ font-size: 30px; }
+}
+
+/* Process page "From request to return": the same rising-card stack (see
+   setupStack in fx.js). Each card lands ~50px below the last so every step's
+   number and title stays readable in the finished deck. Gated on .fx-on, so
+   reduced motion keeps the original hairline list. */
+.fx-on .process-journey-list{
+  display: grid;
+  grid-template-columns: 1fr;
+  max-width: calc(720px + 80px);
+  padding: 40px 40px 32px;
+  margin: -40px -40px -32px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+.fx-on .process-journey-item,
+.fx-on .process-journey-item:last-child{
+  grid-area: 1 / 1;
+  align-self: start;     /* fx.js gives every card the tallest card's height */
+  position: relative;
+  align-items: flex-start;
+  padding: 24px 28px;
+  background: var(--surface);
+  border: 1px solid var(--hairline-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(9, 47, 77, .04), 0 18px 40px -18px rgba(9, 47, 77, .22);
+  overflow: hidden;
+  transform-origin: 50% 0;
+  will-change: transform;
+}
+.fx-on .process-journey-item:nth-child(2){ margin-top: 50px; }
+.fx-on .process-journey-item:nth-child(3){ margin-top: 100px; }
+.fx-on .process-journey-item:nth-child(4){ margin-top: 150px; }
+.fx-on .process-journey-item:nth-child(5){ margin-top: 200px; }
+.fx-on .process-journey-item::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--bg-alt);
+  opacity: min(.55, calc(var(--fx-depth, 0) * .18));
+  pointer-events: none;
+}
+@media (max-width: 900px){
+  .fx-on .process-journey-list{
+    max-width: none;
+    padding-inline: 16px;
+    margin-inline: -16px;
+  }
+  .fx-on .process-journey-item,
+  .fx-on .process-journey-item:last-child{
+    gap: 16px;
+    padding: 18px 20px;
+    border-radius: var(--radius-md);
+  }
+  .fx-on .process-journey-item:nth-child(2){ margin-top: 46px; }
+  .fx-on .process-journey-item:nth-child(3){ margin-top: 92px; }
+  .fx-on .process-journey-item:nth-child(4){ margin-top: 138px; }
+  .fx-on .process-journey-item:nth-child(5){ margin-top: 184px; }
 }

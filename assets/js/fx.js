@@ -115,7 +115,6 @@
     ".reviews-grid",
     ".mm-final-actions",
     ".service-item",
-    ".process-journey-item",
     ".process-shot",
     ".process-review-item",
     ".relacing-info-item",
@@ -190,49 +189,62 @@
     });
   }
 
-  /* ---------- 5. Stacking cards (homepage "How it works") ----------
-     Card 1 sits alone on the deck; cards 2 and 3 wait just below its bottom
-     edge (hidden by a CSS mask) and rise onto it as the deck's top travels from
-     62% to 22% of the viewport, tracking the scroll 1:1. Cards beneath get
-     --fx-depth (0 → n) so they shrink and dim. */
-  const deck = document.querySelector("body.home .home-process-grid");
-  const stack = deck ? Array.from(deck.querySelectorAll(".home-process-step")) : [];
-  if (stack.length > 1) {
+  /* ---------- 5. Stacking cards ----------
+     Card 1 sits alone on the deck; later cards wait just below its bottom
+     edge (hidden by a CSS mask fade at the deck's bottom) and rise onto it in turn as the deck's
+     top travels from `from` to `to` (fractions of viewport height), tracking
+     the scroll 1:1. Each card lands `peek` px below the previous one. Cards
+     beneath get --fx-depth (0 → n) so they shrink and dim.
+       Homepage "How it works": tight 16px deck (a teaser; links to Process).
+       Process "From request to return": ~50px peek so every step's number
+       and title stays readable in the finished deck, like file tabs. */
+  const setupStack = (deck, cardSel, opts) => {
+    const stack = deck ? Array.from(deck.querySelectorAll(cardSel)) : [];
+    if (stack.length < 2) return;
     const n = stack.length;
     const clamp = (v) => Math.min(1, Math.max(0, v));
     const smooth = (t) => t * t * (3 - 2 * t); // gentle in/out at each card's ends only
     let drop = [];
     const measure = () => {
-      // Distance that puts each card's top below the deck's fade band (32px
-      // under card 1's bottom edge). offsetTop ignores transforms.
+      // Every card gets the tallest card's natural height, so empty space
+      // doesn't compound layer by layer (CSS sets align-self: start).
+      stack.forEach((el) => { el.style.minHeight = ""; });
+      const tallest = Math.max(...stack.map((el) => el.offsetHeight));
+      stack.forEach((el) => { el.style.minHeight = `${tallest}px`; });
+      // Distance that puts each card's top below the deck's bottom edge plus
+      // its 32px fade band. offsetTop ignores transforms.
+      const cs = getComputedStyle(deck);
+      const content = deck.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
       const base = stack[0].offsetTop;
-      const cell = stack[0].offsetHeight;
-      drop = stack.map((el) => cell - (el.offsetTop - base) + 32);
+      drop = stack.map((el) => content - (el.offsetTop - base) + 32);
     };
-    let stackQueued = false;
-    const paintStack = () => {
-      stackQueued = false;
+    let queued = false;
+    const paint = () => {
+      queued = false;
       const r = deck.getBoundingClientRect();
       if (r.bottom < -400 || r.top > innerHeight + 400) return;
-      const p = clamp((innerHeight * 0.62 - r.top) / (innerHeight * 0.4));
+      const p = clamp((innerHeight * opts.from - r.top) / (innerHeight * (opts.from - opts.to)));
       const e = stack.map((_, i) => (i === 0 ? 1 : smooth(clamp(p * (n - 1) - (i - 1)))));
       stack.forEach((el, i) => {
         let depth = 0;
         for (let j = i + 1; j < n; j++) depth += e[j];
-        el.style.transform = `translate3d(0, ${(drop[i] * (1 - e[i])).toFixed(1)}px, 0) scale(${(1 - depth * 0.05).toFixed(4)})`;
+        el.style.transform = `translate3d(0, ${(drop[i] * (1 - e[i])).toFixed(1)}px, 0) scale(${(1 - depth * opts.shrink).toFixed(4)})`;
         el.style.setProperty("--fx-depth", depth.toFixed(3));
       });
     };
-    const queueStack = () => {
-      if (stackQueued) return;
-      stackQueued = true;
-      requestAnimationFrame(paintStack);
+    const queue = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(paint);
     };
-    addEventListener("scroll", queueStack, { passive: true });
-    addEventListener("resize", () => { measure(); queueStack(); });
+    addEventListener("scroll", queue, { passive: true });
+    addEventListener("resize", () => { measure(); queue(); });
+    addEventListener("load", () => { measure(); queue(); }); // images/fonts can change card heights
     measure();
-    paintStack();
-  }
+    paint();
+  };
+  setupStack(document.querySelector("body.home .home-process-grid"), ".home-process-step", { from: 0.62, to: 0.22, shrink: 0.05 });
+  setupStack(document.querySelector(".process-journey-list"), ".process-journey-item", { from: 0.72, to: 0.12, shrink: 0.025 });
 
   /* ---------- 6. Magnetic CTAs (mouse only) ---------- */
   if (finePointer) {
