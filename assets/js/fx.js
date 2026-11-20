@@ -196,7 +196,12 @@
      beneath get --fx-depth (0 → n) so they shrink and dim.
        Homepage "How it works": tight 16px deck (a teaser; links to Process).
        Process "From request to return": ~50px peek so every step's number
-       and title stays readable in the finished deck, like file tabs. */
+       and title stays readable in the finished deck, like file tabs.
+     pinMobile: on phones, a tall 5-card deck can't animate calmly in one
+     screen of travel (cards moved ~3x scroll speed), so its whole section
+     pins (sticky, plus a spacer after it) and progress comes from scrolling
+     through the spacer: ~2/3 of a screen per card (homepage-like pace). hold: each card lands in
+     the first part of its slot, then a short beat before the next. */
   const setupStack = (deck, cardSel, opts) => {
     const stack = deck ? Array.from(deck.querySelectorAll(cardSel)) : [];
     if (stack.length < 2) return;
@@ -204,6 +209,16 @@
     const clamp = (v) => Math.min(1, Math.max(0, v));
     const smooth = (t) => t * t * (3 - 2 * t); // gentle in/out at each card's ends only
     let drop = [];
+    const mq = matchMedia("(max-width: 900px)");
+    const pinSection = opts.pinMobile ? deck.closest("section") : null;
+    let spacer = null;
+    if (pinSection) {
+      spacer = document.createElement("div");
+      spacer.className = "fx-pin-spacer";
+      spacer.setAttribute("aria-hidden", "true");
+      pinSection.after(spacer);
+    }
+    const pinned = () => !!pinSection && mq.matches;
     const measure = () => {
       // Every card gets the tallest card's natural height, so empty space
       // doesn't compound layer by layer (CSS sets align-self: start).
@@ -216,14 +231,35 @@
       const content = deck.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
       const base = stack[0].offsetTop;
       drop = stack.map((el) => content - (el.offsetTop - base) + 32);
+      if (pinSection) {
+        const on = pinned();
+        pinSection.classList.toggle("fx-pin", on);
+        spacer.style.height = on ? `${Math.round(innerHeight * 0.65 * (n - 1))}px` : "0px";
+        if (on) {
+          const header = parseFloat(getComputedStyle(root).getPropertyValue("--headerH")) || 48;
+          const room = innerHeight - header;
+          pinSection.style.top = `${Math.round(header + Math.max(8, (room - pinSection.offsetHeight) * 0.3))}px`;
+        } else {
+          pinSection.style.top = "";
+        }
+      }
     };
     let queued = false;
     const paint = () => {
       queued = false;
       const r = deck.getBoundingClientRect();
       if (r.bottom < -400 || r.top > innerHeight + 400) return;
-      const p = clamp((innerHeight * opts.from - r.top) / (innerHeight * (opts.from - opts.to)));
-      const e = stack.map((_, i) => (i === 0 ? 1 : smooth(clamp(p * (n - 1) - (i - 1)))));
+      let p;
+      if (pinned()) {
+        // 0 until the section pins (spacer sits right under it), 1 once the
+        // spacer has scrolled up past it.
+        const gap = pinSection.getBoundingClientRect().bottom - spacer.getBoundingClientRect().top;
+        p = clamp(gap / Math.max(1, spacer.offsetHeight));
+      } else {
+        p = clamp((innerHeight * opts.from - r.top) / (innerHeight * (opts.from - opts.to)));
+      }
+      const hold = pinned() ? opts.hold || 1 : 1; // desktop pacing unchanged
+      const e = stack.map((_, i) => (i === 0 ? 1 : smooth(clamp((p * (n - 1) - (i - 1)) / hold))));
       stack.forEach((el, i) => {
         let depth = 0;
         for (let j = i + 1; j < n; j++) depth += e[j];
@@ -243,7 +279,7 @@
     paint();
   };
   setupStack(document.querySelector("body.home .home-process-grid"), ".home-process-step", { from: 0.62, to: 0.22, shrink: 0.05 });
-  setupStack(document.querySelector(".process-journey-list"), ".process-journey-item", { from: 0.72, to: 0.12, shrink: 0.025 });
+  setupStack(document.querySelector(".process-journey-list"), ".process-journey-item", { from: 0.72, to: 0.12, shrink: 0.025, pinMobile: true, hold: 0.8 });
 
   /* ---------- 6. Photo wheel ----------
      Homepage "Recent glove work" strip and Process photos. The strip stays a

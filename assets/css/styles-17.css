@@ -2985,6 +2985,9 @@ html.lenis{ scroll-behavior: auto; }
   opacity: min(.55, calc(var(--fx-depth, 0) * .18));
   pointer-events: none;
 }
+/* Phones: the section holds while the cards land (fx.js toggles .fx-pin
+   and sizes the spacer that follows it). */
+.fx-on .fx-pin{ position: sticky; }
 @media (max-width: 900px){
   .fx-on .process-journey-list{
     max-width: none;
