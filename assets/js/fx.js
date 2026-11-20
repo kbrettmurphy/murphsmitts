@@ -346,7 +346,72 @@
   setupWheel(document.getElementById("homeGalleryPreview"), ".gallery-thumb");
   setupWheel(document.querySelector(".process-gallery"), ".process-shot");
 
-  /* ---------- 7. Magnetic CTAs (mouse only) ---------- */
+  /* ---------- 7. Section sheets (homepage experiment) ----------
+     Each homepage section rides on a full-width "sheet". A sheet scrolls
+     normally until its bottom reaches the bottom of the screen (or, if it's
+     short, until it reaches the header), then pins there while the next
+     sheet slides up over it; the covered sheet shrinks and dims slightly.
+     Pinning only after a sheet has been fully seen means sections of any
+     height work and nothing is hidden. Grouping is done here (no markup
+     change): hero | trust cues + latest article + newsletter | each
+     .home-section | final CTA. The lightbox stays outside the sheets (a
+     transformed ancestor would break its position: fixed). */
+  const main = document.querySelector("body.home main.home-sections");
+  const heroEl = document.querySelector("body.home .hero");
+  if (main && heroEl) {
+    main.prepend(heroEl); // keep every sheet in one containing block
+    const starts = [heroEl, main.querySelector(".home-trust-cues"), ...main.querySelectorAll(":scope > .home-section, :scope > .mm-final-cta")].filter(Boolean);
+    const sheets = starts.map((start, i) => {
+      const sheet = document.createElement("div");
+      sheet.className = "fx-sheet";
+      start.before(sheet);
+      let node = start;
+      while (node && node !== starts[i + 1] && !(node.classList && node.classList.contains("lightbox"))) {
+        const next = node.nextElementSibling;
+        sheet.appendChild(node);
+        node = next;
+      }
+      return sheet;
+    });
+    main.classList.add("fx-sheets");
+
+    let tops = [];
+    const header = () => parseFloat(getComputedStyle(root).getPropertyValue("--headerH")) || 52;
+    const place = () => {
+      const h = header();
+      tops = sheets.map((sh) => Math.min(h, innerHeight - sh.offsetHeight));
+      sheets.forEach((sh, i) => {
+        sh.style.top = `${Math.round(tops[i])}px`;
+        sh.style.transformOrigin = `50% ${Math.round(Math.max(0, -tops[i]))}px`; // top of its visible part
+      });
+      queueSheets();
+    };
+    let sheetsQueued = false;
+    const paintSheets = () => {
+      sheetsQueued = false;
+      sheets.forEach((sh, i) => {
+        const next = sheets[i + 1];
+        const t = next ? Math.min(1, Math.max(0, (innerHeight - next.getBoundingClientRect().top) / innerHeight)) : 0;
+        sh.style.transform = t ? `scale(${(1 - t * 0.05).toFixed(4)})` : "";
+        sh.style.setProperty("--fx-cover", t.toFixed(3));
+      });
+    };
+    function queueSheets() {
+      if (sheetsQueued) return;
+      sheetsQueued = true;
+      requestAnimationFrame(paintSheets);
+    }
+    addEventListener("scroll", queueSheets, { passive: true });
+    addEventListener("resize", place);
+    // Gallery photos and reviews load later and change sheet heights.
+    if ("ResizeObserver" in window) {
+      const ro = new ResizeObserver(place);
+      sheets.forEach((sh) => ro.observe(sh));
+    }
+    place();
+  }
+
+  /* ---------- 8. Magnetic CTAs (mouse only) ---------- */
   if (finePointer) {
     document.querySelectorAll(".hero .btn-primary, .mm-final-cta .btn-primary").forEach((btn) => {
       let x = 0, y = 0, tx = 0, ty = 0, raf = 0;

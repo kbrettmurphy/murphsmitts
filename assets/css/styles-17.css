@@ -3028,3 +3028,35 @@ html.lenis{ scroll-behavior: auto; }
   .fx-on .fx-wheel{ scroll-snap-type: none; cursor: ew-resize; }
   .fx-on .fx-wheel .gallery-thumb{ cursor: zoom-in; }
 }
+
+/* Section sheets — homepage experiment (see section 7 in fx.js). Each sheet
+   is opaque, full width, with rounded top corners and a soft top shadow so
+   its edge reads as it slides over the one beneath. fx.js sets each sheet's
+   sticky top and --fx-cover (0 → 1) on the one being covered. */
+.fx-on .fx-sheets .fx-sheet{
+  position: sticky;
+  display: flow-root;    /* contain section margins so the sheet covers them */
+  padding-bottom: clamp(28px, 4vw, 48px);
+  background: var(--bg);
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -1px 0 var(--hairline-soft), 0 -18px 40px -12px rgba(9, 47, 77, .10);
+  will-change: transform;
+}
+.fx-on .fx-sheets .fx-sheet:first-child{
+  border-radius: 0;
+  box-shadow: none;
+}
+.fx-on .fx-sheets .fx-sheet::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(9, 47, 77, .08);
+  opacity: var(--fx-cover, 0);
+  pointer-events: none;
+}
+/* Hairlines that used to separate these sections are now the sheet edges. */
+.fx-on .fx-sheets .mm-final-cta{ border-top: 0; }
+@media (max-width: 900px){
+  .fx-on .fx-sheets .fx-sheet{ border-radius: 20px 20px 0 0; }
+}
