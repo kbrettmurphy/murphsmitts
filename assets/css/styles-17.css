@@ -2742,13 +2742,13 @@ h1.mm-section-title{ font-size: clamp(30px, 4.4vw, 44px); }
    classes. Nothing here applies when JS is off or reduced motion is on.
    ========================================================================== */
 
-/* Page-to-page cross-fade (Chrome/Edge, Safari 18.2+; others load normally). */
+/* Page-to-page cross-fade (Chrome/Edge, Safari 18.2+; others load normally).
+   Kept short and simple; the page's own reveals supply the motion. */
 @view-transition { navigation: auto; }
 .site-header{ view-transition-name: mm-site-header; }
-::view-transition-old(root){ animation: mm-vt-out .22s ease both; }
-::view-transition-new(root){ animation: mm-vt-in .5s cubic-bezier(.22,1,.36,1) both; }
-@keyframes mm-vt-out{ to{ opacity: 0; } }
-@keyframes mm-vt-in{ from{ opacity: 0; transform: translateY(14px); } }
+::view-transition-old(root){ animation: mm-vt-fade .12s ease both reverse; }
+::view-transition-new(root){ animation: mm-vt-fade .2s ease both; }
+@keyframes mm-vt-fade{ from{ opacity: 0; } }
 @media (prefers-reduced-motion: reduce){
   @view-transition { navigation: none; }
 }
@@ -2774,13 +2774,56 @@ html.lenis{ scroll-behavior: auto; }
   view-transition-name: mm-fx-progress;
 }
 
-/* Scroll reveals */
-.fx-on .fx-reveal{
+/* Scroll reveals. The list must match REVEAL in assets/js/fx.js. Hidden from
+   first paint; fx.js adds .is-in to animate, then .fx-done to settle. */
+.fx-on :is(
+  .mm-section-intro,
+  .home-trust-cue,
+  .home-latest-article-row,
+  .home-newsletter-copy,
+  .home-trust-panel > div,
+  .home-service-item,
+  .home-process-step,
+  .home-actions,
+  .gallery-strip,
+  .reviews-grid,
+  .mm-final-actions,
+  .service-item,
+  .process-journey-item,
+  .process-shot,
+  .process-review-item,
+  .relacing-info-item,
+  .relacing-faq-item,
+  .care-index-item,
+  .about-photo,
+  .about-story
+):not(.fx-done, .hero *, form *, .track-timeline *, .lightbox *){
   opacity: 0;
   transform: translate3d(0, 26px, 0);
   filter: blur(5px);
 }
-.fx-on .fx-reveal.is-in{
+.fx-on :is(
+  .mm-section-intro,
+  .home-trust-cue,
+  .home-latest-article-row,
+  .home-newsletter-copy,
+  .home-trust-panel > div,
+  .home-service-item,
+  .home-process-step,
+  .home-actions,
+  .gallery-strip,
+  .reviews-grid,
+  .mm-final-actions,
+  .service-item,
+  .process-journey-item,
+  .process-shot,
+  .process-review-item,
+  .relacing-info-item,
+  .relacing-faq-item,
+  .care-index-item,
+  .about-photo,
+  .about-story
+).is-in:not(.fx-done){
   opacity: 1;
   transform: none;
   filter: blur(0);
@@ -2790,28 +2833,29 @@ html.lenis{ scroll-behavior: auto; }
 }
 
 /* Homepage hero intro */
-.fx-on .fx-hero .fx-word{
+.fx-on body.home .hero .fx-word{
   display: inline-block;
   overflow: hidden;
   vertical-align: top;
   padding-bottom: .12em;
   margin-bottom: -.12em;
 }
-.fx-on .fx-hero .fx-word > span{
+.fx-on body.home .hero .fx-word > span{
   display: inline-block;
   animation: mm-word-up .95s cubic-bezier(.22,1,.36,1) both;
+  animation-delay: calc(.1s + var(--i, 0) * .07s);
 }
-.fx-on .fx-hero .mm-eyebrow{ animation: mm-rise .8s cubic-bezier(.22,1,.36,1) both; }
-.fx-on .fx-hero .hero-content > p:not(.mm-eyebrow){ animation: mm-rise .9s .4s cubic-bezier(.22,1,.36,1) both; }
-.fx-on .fx-hero .cta{ animation: mm-rise .9s .5s cubic-bezier(.22,1,.36,1) both; }
-.fx-on .fx-hero .hero-media{
+.fx-on body.home .hero .mm-eyebrow{ animation: mm-rise .8s cubic-bezier(.22,1,.36,1) both; }
+.fx-on body.home .hero .hero-content > p:not(.mm-eyebrow){ animation: mm-rise .9s .4s cubic-bezier(.22,1,.36,1) both; }
+.fx-on body.home .hero .cta{ animation: mm-rise .9s .5s cubic-bezier(.22,1,.36,1) both; }
+.fx-on body.home .hero .hero-media{
   overflow: hidden;
   border-radius: var(--radius-lg);
   animation: mm-photo-in 1.3s .45s cubic-bezier(.22,1,.36,1) both;
 }
-.fx-on .fx-hero .hero-media img{ will-change: transform; }
+.fx-on body.home .hero .hero-media img{ will-change: transform; }
 @media (max-width: 900px){
-  .fx-on .fx-hero .hero-media{ border-radius: var(--radius-md); }
+  .fx-on body.home .hero .hero-media{ border-radius: var(--radius-md); }
 }
 @keyframes mm-word-up{ from{ transform: translate3d(0, 110%, 0); } }
 @keyframes mm-rise{ from{ opacity: 0; transform: translate3d(0, 18px, 0); } }

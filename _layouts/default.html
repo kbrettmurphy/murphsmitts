@@ -34,6 +34,11 @@
   <link rel="apple-touch-icon" href="{{ '/assets/img/favicon/apple-touch-icon.png' | relative_url }}">
   <link rel="manifest" href="{{ '/assets/img/favicon/site.webmanifest' | relative_url }}">
   
+  <!-- Site motion: set the animation start state before first paint (fx.js
+       confirms with window.mmFxReady; if it never loads, content shows anyway). -->
+  <script data-cfasync="false">(function(){if(!window.matchMedia||matchMedia("(prefers-reduced-motion: reduce)").matches)return;var d=document.documentElement;d.classList.add("fx-on");setTimeout(function(){if(!window.mmFxReady)d.classList.remove("fx-on")},2500)})();</script>
+  <!-- Fetch the next page on link hover so navigation feels instant (Chrome/Edge; others ignore). -->
+  <script type="speculationrules">{"prefetch":[{"where":{"and":[{"href_matches":"/*"},{"not":{"href_matches":"/admin/*"}},{"not":{"href_matches":"/api/*"}}]},"eagerness":"moderate"}]}</script>
   <link rel="stylesheet" href="{{ '/assets/css/styles-17.css' | relative_url }}?v={{ site.time }}">
 </head>
 

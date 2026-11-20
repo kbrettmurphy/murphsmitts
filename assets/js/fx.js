@@ -15,6 +15,9 @@
   const root = document.documentElement;
   const body = document.body;
   const finePointer = matchMedia("(pointer: fine)").matches;
+  // The <head> snippet in _layouts/default.html adds .fx-on before first paint
+  // so hidden start states never flash; this confirms the script arrived.
+  window.mmFxReady = true;
   root.classList.add("fx-on");
 
   /* ---------- 1. Smooth scroll (Lenis) ----------
@@ -68,26 +71,7 @@
   /* ---------- 3. Homepage hero ---------- */
   const hero = document.querySelector("body.home .hero");
   if (hero) {
-    // Headline rises word by word from behind a mask.
-    const h1 = hero.querySelector("h1");
-    if (h1 && h1.children.length === 0) {
-      const text = h1.textContent.trim();
-      h1.setAttribute("aria-label", text);
-      h1.textContent = "";
-      text.split(/\s+/).forEach((word, i, all) => {
-        const mask = document.createElement("span");
-        mask.className = "fx-word";
-        mask.setAttribute("aria-hidden", "true");
-        const inner = document.createElement("span");
-        inner.textContent = word;
-        inner.style.animationDelay = `${0.1 + i * 0.07}s`;
-        mask.appendChild(inner);
-        h1.appendChild(mask);
-        if (i < all.length - 1) h1.appendChild(document.createTextNode(" "));
-      });
-    }
-    hero.classList.add("fx-hero");
-
+    // Headline word reveal + intro are pure CSS (word spans live in index.html).
     // Photo drifts inside its frame as the hero scrolls away.
     const img = hero.querySelector(".hero-media img");
     const copy = hero.querySelector(".hero-content");
@@ -128,7 +112,6 @@
     ".home-service-item",
     ".home-process-step",
     ".home-actions",
-    ".home-similar-search",
     ".gallery-strip",
     ".reviews-grid",
     ".mm-final-actions",
@@ -143,13 +126,23 @@
     ".about-story",
   ].join(",");
 
-  const targets = Array.from(document.querySelectorAll(REVEAL)).filter(
-    (el) => !el.closest(".hero, form, .track-timeline, .lightbox") && !el.parentElement.closest(".fx-reveal")
-  );
+  // CSS hides every REVEAL match from first paint; anything we won't animate
+  // gets .fx-done right away so it shows.
+  const all = Array.from(document.querySelectorAll(REVEAL));
+  const settle = (el) => el.classList.add("fx-done");
+  const targets = all.filter((el) => {
+    const skip =
+      el.parentElement.closest(".hero, form, .track-timeline, .lightbox") ||
+      all.some((other) => other !== el && other.contains(el)); // nested: parent animates
+    if (skip) settle(el);
+    return !skip;
+  });
 
-  if (targets.length && "IntersectionObserver" in window) {
+  if (!("IntersectionObserver" in window)) targets.forEach(settle);
+  else if (targets.length) {
     const finish = (el) => {
-      el.classList.remove("fx-reveal", "is-in");
+      el.classList.add("fx-done");
+      el.classList.remove("is-in");
       el.style.transitionDelay = "";
     };
     const reveal = (el, delay) => {
@@ -192,8 +185,7 @@
 
     targets.forEach((el) => {
       // Anything already above the viewport (anchor/hash load) just shows.
-      if (el.getBoundingClientRect().bottom < 0) return;
-      el.classList.add("fx-reveal");
+      if (el.getBoundingClientRect().bottom < 0) return settle(el);
       pending.add(el);
       io.observe(el);
     });
