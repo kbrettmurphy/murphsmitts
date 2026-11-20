@@ -2788,7 +2788,6 @@ html.lenis{ scroll-behavior: auto; }
   .reviews-grid,
   .mm-final-actions,
   .service-item,
-  .process-shot,
   .process-review-item,
   .relacing-info-item,
   .relacing-faq-item,
@@ -2812,7 +2811,6 @@ html.lenis{ scroll-behavior: auto; }
   .reviews-grid,
   .mm-final-actions,
   .service-item,
-  .process-shot,
   .process-review-item,
   .relacing-info-item,
   .relacing-faq-item,
@@ -3003,4 +3001,30 @@ html.lenis{ scroll-behavior: auto; }
   .fx-on .process-journey-item:nth-child(3){ margin-top: 92px; }
   .fx-on .process-journey-item:nth-child(4){ margin-top: 138px; }
   .fx-on .process-journey-item:nth-child(5){ margin-top: 184px; }
+}
+
+/* Photo wheel: homepage "Recent glove work" strip + Process photos (see
+   setupWheel in fx.js). Photos turn away in 3D by distance from center; the
+   edges fade out. Phones swipe and snap to center; desktop mouse scrubs by
+   cursor position, so snapping is off there (it would fight the glide). */
+.fx-on .fx-wheel{
+  position: relative;    /* offsetLeft is measured from the strip */
+  padding-block: 12px 16px;
+  scroll-snap-type: x mandatory;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
+.fx-on .fx-wheel > *{
+  position: relative;
+  scroll-snap-align: center;
+  will-change: transform;
+}
+@media (max-width: 480px){
+  /* Narrower than the plain strip so neighbors peek in at the sides. */
+  .fx-on .fx-wheel .gallery-thumb,
+  .fx-on .fx-wheel .process-shot{ width: 46vw; }
+}
+@media (pointer: fine){
+  .fx-on .fx-wheel{ scroll-snap-type: none; cursor: ew-resize; }
+  .fx-on .fx-wheel .gallery-thumb{ cursor: zoom-in; }
 }

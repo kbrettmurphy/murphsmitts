@@ -115,7 +115,6 @@
     ".reviews-grid",
     ".mm-final-actions",
     ".service-item",
-    ".process-shot",
     ".process-review-item",
     ".relacing-info-item",
     ".relacing-faq-item",
@@ -246,7 +245,108 @@
   setupStack(document.querySelector("body.home .home-process-grid"), ".home-process-step", { from: 0.62, to: 0.22, shrink: 0.05 });
   setupStack(document.querySelector(".process-journey-list"), ".process-journey-item", { from: 0.72, to: 0.12, shrink: 0.025 });
 
-  /* ---------- 6. Magnetic CTAs (mouse only) ---------- */
+  /* ---------- 6. Photo wheel ----------
+     Homepage "Recent glove work" strip and Process photos. The strip stays a
+     native horizontal scroller (swipe on phones, trackpad, keyboard), and
+     each photo turns away in 3D by its distance from the center.
+     Desktop mouse: the cursor's left-right position across the strip IS the
+     wheel position (8% dead zone each side), eased so it glides and stops
+     when the mouse stops. Photos stay the same buttons the lightbox uses. */
+  const setupWheel = (strip, itemSel) => {
+    if (!strip) return;
+    strip.classList.add("fx-wheel");
+    let items = [];
+    let unit = 1;
+    let pos = 0;
+    let target = null;
+    let raf = 0;
+    let paintQueued = false;
+
+    const paint = () => {
+      paintQueued = false;
+      const mid = strip.scrollLeft + strip.clientWidth / 2;
+      items.forEach((el) => {
+        const d = Math.max(-3, Math.min(3, (el.offsetLeft + el.offsetWidth / 2 - mid) / unit));
+        const a = Math.abs(d);
+        // Turn up to 35deg, push back with distance, and pull side photos in
+        // toward the center (more for outer ones, which project narrower) so
+        // each tucks behind its neighbor by about the same amount.
+        const sign = d < 0 ? -1 : 1;
+        const pull = (a <= 1 ? a * 0.3 : 0.3 + (a - 1) * 0.45) * unit;
+        el.style.transform = `translateX(${(-sign * pull).toFixed(1)}px) perspective(1000px) rotateY(${(-sign * Math.min(a, 1) * 35).toFixed(2)}deg) translateZ(${(-a * 90).toFixed(1)}px)`;
+        el.style.opacity = (1 - Math.max(0, a - 1.4) * 0.4).toFixed(3);
+        el.style.zIndex = String(100 - Math.round(a * 10));
+      });
+    };
+    const queuePaint = () => {
+      if (paintQueued) return;
+      paintQueued = true;
+      requestAnimationFrame(paint);
+    };
+    const measure = () => {
+      items = Array.from(strip.querySelectorAll(itemSel));
+      if (!items.length) return;
+      const w = items[0].offsetWidth;
+      const gap = items[1] ? items[1].offsetLeft - items[0].offsetLeft - w : 12;
+      unit = Math.max(1, w + gap);
+      // Pad so the first and last photos can sit dead center.
+      strip.style.paddingInline = `${Math.max(0, Math.round((strip.clientWidth - w) / 2))}px`;
+      paint();
+    };
+
+    const glide = () => {
+      raf = 0;
+      if (target === null) return;
+      const diff = target - pos;
+      if (Math.abs(diff) < 0.5) {
+        pos = target;
+        strip.scrollLeft = pos;
+        return;
+      }
+      pos += diff * 0.14;
+      strip.scrollLeft = pos;
+      raf = requestAnimationFrame(glide);
+    };
+
+    if (finePointer) {
+      strip.addEventListener("pointermove", (e) => {
+        if (e.pointerType !== "mouse") return;
+        const r = strip.getBoundingClientRect();
+        const t = Math.max(0, Math.min(1, ((e.clientX - r.left) / r.width - 0.08) / 0.84));
+        const max = strip.scrollWidth - strip.clientWidth;
+        // Soft detents: lean 70% toward the nearest photo's centered position
+        // (photo i is centered at i * unit), so a photo settles dead center.
+        const raw = t * max;
+        const snapped = Math.round(raw / unit) * unit;
+        target = Math.max(0, Math.min(max, snapped + (raw - snapped) * 0.3));
+        if (!raf) {
+          pos = strip.scrollLeft;
+          raf = requestAnimationFrame(glide);
+        }
+      });
+      // A trackpad swipe takes over until the cursor moves again.
+      strip.addEventListener("wheel", () => { target = null; }, { passive: true });
+      strip.addEventListener("pointerleave", () => { target = null; });
+    }
+
+    // Arrow keys step one photo.
+    strip.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      target = null;
+      strip.scrollBy({ left: e.key === "ArrowRight" ? unit : -unit, behavior: "smooth" });
+    });
+
+    strip.addEventListener("scroll", queuePaint, { passive: true });
+    addEventListener("resize", measure);
+    addEventListener("load", measure);
+    new MutationObserver(measure).observe(strip, { childList: true }); // homepage photos arrive from the API
+    measure();
+  };
+  setupWheel(document.getElementById("homeGalleryPreview"), ".gallery-thumb");
+  setupWheel(document.querySelector(".process-gallery"), ".process-shot");
+
+  /* ---------- 7. Magnetic CTAs (mouse only) ---------- */
   if (finePointer) {
     document.querySelectorAll(".hero .btn-primary, .mm-final-cta .btn-primary").forEach((btn) => {
       let x = 0, y = 0, tx = 0, ty = 0, raf = 0;
