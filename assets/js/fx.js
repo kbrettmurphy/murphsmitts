@@ -191,33 +191,28 @@
   }
 
   /* ---------- 5. Stacking cards (homepage "How it works") ----------
-     The panel pins (CSS sticky) while its track scrolls by. Progress through
-     the track brings each later card up from below onto the deck; cards
-     beneath get --fx-depth (0 → n) so they shrink and dim. The last 20% of
-     the track is a hold on the finished stack. */
-  const track = document.querySelector("body.home .home-process-track");
-  const pin = track && track.querySelector(".home-process-pin");
-  const stack = track ? Array.from(track.querySelectorAll(".home-process-step")) : [];
-  if (pin && stack.length > 1) {
+     No pinning: progress comes from where the deck sits in the viewport.
+     p = 0 when its top is near the bottom of the screen, 1 when it reaches
+     ~45% from the top. Later cards rise onto the deck in turn; cards beneath
+     get --fx-depth (0 → n) so they shrink and dim. */
+  const deck = document.querySelector("body.home .home-process-grid");
+  const stack = deck ? Array.from(deck.querySelectorAll(".home-process-step")) : [];
+  if (stack.length > 1) {
     const n = stack.length;
     const clamp = (v) => Math.min(1, Math.max(0, v));
     const ease = (t) => 1 - Math.pow(1 - t, 3);
     let stackQueued = false;
     const paintStack = () => {
       stackQueued = false;
-      const tr = track.getBoundingClientRect();
-      const pr = pin.getBoundingClientRect();
-      if (tr.bottom < 0 || tr.top > innerHeight) return;
-      const dist = Math.max(1, tr.height - pr.height);
-      const p = clamp((pr.top - tr.top) / dist);
-      const rise = innerHeight * 0.55;
-      // e[i]: 0 = waiting below, 1 = landed. Card 0 is always landed.
-      const e = stack.map((_, i) => (i === 0 ? 1 : ease(clamp((p / 0.8) * (n - 1) - (i - 1)))));
+      const r = deck.getBoundingClientRect();
+      if (r.bottom < -200 || r.top > innerHeight + 200) return;
+      const p = clamp((innerHeight * 0.92 - r.top) / (innerHeight * 0.47));
+      const e = stack.map((_, i) => (i === 0 ? 1 : ease(clamp((p / 0.9) * (n - 1) - (i - 1)))));
       stack.forEach((el, i) => {
         let depth = 0;
         for (let j = i + 1; j < n; j++) depth += e[j];
-        el.style.transform = `translate3d(0, ${((1 - e[i]) * rise).toFixed(1)}px, 0) scale(${(1 - depth * 0.05).toFixed(4)})`;
-        el.style.opacity = i === 0 ? "" : clamp(e[i] * 3).toFixed(3);
+        el.style.transform = `translate3d(0, ${((1 - e[i]) * 64).toFixed(1)}px, 0) scale(${(1 - depth * 0.05).toFixed(4)})`;
+        el.style.opacity = i === 0 ? "" : clamp(e[i] * 1.6).toFixed(3);
         el.style.setProperty("--fx-depth", depth.toFixed(3));
       });
     };
@@ -226,17 +221,9 @@
       stackQueued = true;
       requestAnimationFrame(paintStack);
     };
-    // Pin the panel optically centered (40% down) below the header (tall screens
-    // otherwise leave it high with a blank band underneath).
-    const centerPin = () => {
-      const header = parseFloat(getComputedStyle(root).getPropertyValue("--headerH")) || 52;
-      const room = innerHeight - header;
-      pin.style.top = `${Math.round(header + Math.max(24, (room - pin.offsetHeight) * 0.4))}px`;
-      queueStack();
-    };
     addEventListener("scroll", queueStack, { passive: true });
-    addEventListener("resize", centerPin);
-    centerPin();
+    addEventListener("resize", queueStack);
+    paintStack();
   }
 
   /* ---------- 6. Magnetic CTAs (mouse only) ---------- */

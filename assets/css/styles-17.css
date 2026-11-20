@@ -2868,19 +2868,10 @@ html.lenis{ scroll-behavior: auto; }
   will-change: transform;
 }
 
-/* Homepage "How it works": stacking cards. The heading + deck pin while the
-   track scrolls past; cards 2 and 3 rise from below and land on the deck,
-   and the ones beneath shrink and dim. fx.js drives transform + --fx-depth.
+/* Homepage "How it works": stacking cards. As the section scrolls up the
+   screen, cards 2 and 3 rise onto the deck and the ones beneath shrink and
+   dim. No pinning or extra height. fx.js drives transform + --fx-depth.
    Gated on .fx-on, so reduced motion keeps the original 3-column grid. */
-.fx-on body.home .home-process-track::after{
-  content: "";           /* scroll distance while the panel is pinned */
-  display: block;
-  height: 110vh;
-}
-.fx-on body.home .home-process-pin{
-  position: sticky;
-  top: calc(var(--headerH) + 6vh);
-}
 .fx-on body.home .home-process-grid{
   display: grid;
   grid-template-columns: 1fr;
