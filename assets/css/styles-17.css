@@ -3040,32 +3040,41 @@ html.lenis{ scroll-behavior: auto; }
   .fx-on .fx-wheel .gallery-thumb{ cursor: zoom-in; }
 }
 
-/* Section sheets — homepage experiment (see section 7 in fx.js). Each sheet
-   is opaque, full width, with rounded top corners and a soft top shadow so
-   its edge reads as it slides over the one beneath. fx.js sets each sheet's
-   sticky top and --fx-cover (0 → 1) on the one being covered. */
+/* Section sheets (see section 7 in fx.js): homepage, Services, Relacing
+   guide, About. Each sheet is opaque with rounded top corners and a soft top
+   shadow so its edge reads as it slides over the one beneath. The surface
+   is a full-width layer behind the sheet, since inner pages sit in a
+   centered column. fx.js sets each sheet's sticky top and --fx-cover
+   (0 → 1) on the one being covered. Extra bottom room so each section is
+   fully seen, with air under it, before the next sheet arrives. */
 .fx-on .fx-sheets .fx-sheet{
   position: sticky;
+  isolation: isolate;    /* keeps the z-index:-1 surface inside the sheet */
   display: flow-root;    /* contain section margins so the sheet covers them */
-  padding-bottom: clamp(28px, 4vw, 48px);
-  background: var(--bg);
+  padding-top: clamp(8px, 1.5vw, 20px);
+  padding-bottom: clamp(64px, 9vw, 128px);
   border-radius: 28px 28px 0 0;
-  box-shadow: 0 -1px 0 var(--hairline-soft), 0 -18px 40px -12px rgba(9, 47, 77, .10);
   will-change: transform;
 }
-.fx-on .fx-sheets .fx-sheet:first-child{
-  border-radius: 0;
-  box-shadow: none;
-}
+.fx-on .fx-sheets .fx-sheet::before,
 .fx-on .fx-sheets .fx-sheet::after{
   content: "";
   position: absolute;
-  inset: 0;
+  inset: 0 min(0px, calc(50% - 50vw));   /* full width even inside a centered column */
   border-radius: inherit;
-  background: rgba(9, 47, 77, .08);
-  opacity: var(--fx-cover, 0);
   pointer-events: none;
 }
+.fx-on .fx-sheets .fx-sheet::before{
+  z-index: -1;
+  background: var(--bg);
+  box-shadow: 0 -1px 0 var(--hairline-soft), 0 -18px 40px -12px rgba(9, 47, 77, .10);
+}
+.fx-on .fx-sheets .fx-sheet::after{
+  background: rgba(9, 47, 77, .08);
+  opacity: var(--fx-cover, 0);
+}
+.fx-on .fx-sheets .fx-sheet:first-child{ border-radius: 0; }
+.fx-on .fx-sheets .fx-sheet:first-child::before{ box-shadow: none; }
 /* Hairlines that used to separate these sections are now the sheet edges. */
 .fx-on .fx-sheets .mm-final-cta{ border-top: 0; }
 @media (max-width: 900px){

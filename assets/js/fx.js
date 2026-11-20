@@ -393,34 +393,50 @@
   setupWheel(document.getElementById("homeGalleryPreview"), ".gallery-thumb");
   setupWheel(document.querySelector(".process-gallery"), ".process-shot");
 
-  /* ---------- 7. Section sheets (homepage experiment) ----------
-     Each homepage section rides on a full-width "sheet". A sheet scrolls
-     normally until its bottom is ~70% down the screen (or, if it's short,
-     until it reaches the header), then pins there while the next
-     sheet slides up over it; the covered sheet shrinks and dims slightly.
-     Pinning only after a sheet has been fully seen means sections of any
-     height work and nothing is hidden. Grouping is done here (no markup
-     change): hero | trust cues + latest article + newsletter | each
-     .home-section | final CTA. The lightbox stays outside the sheets (a
-     transformed ancestor would break its position: fixed). */
-  const main = document.querySelector("body.home main.home-sections");
-  const heroEl = document.querySelector("body.home .hero");
-  if (main && heroEl) {
-    main.prepend(heroEl); // keep every sheet in one containing block
-    const starts = [heroEl, main.querySelector(".home-trust-cues"), ...main.querySelectorAll(":scope > .home-section, :scope > .mm-final-cta")].filter(Boolean);
-    const sheets = starts.map((start, i) => {
+  /* ---------- 7. Section sheets ----------
+     Each section rides on a full-width "sheet". A sheet scrolls normally
+     until its bottom is ~70% down the screen (or, if it's short, until it
+     reaches the header), then pins there while the next sheet slides up
+     over it; the covered sheet shrinks and dims slightly. Pinning only after
+     a sheet has been fully seen means sections of any height work and
+     nothing is hidden. Grouping is done here (no markup change):
+       Homepage: hero | trust cues + latest article + newsletter | each
+         .home-section | final CTA.
+       Content pages (Services, Relacing guide, About): intro + first section
+         | each later top-level section.
+     Pages where people do things (Contact, Track, Gallery, For Sale) and
+     Process (has its own pinned stack) are left alone; pages with fewer
+     than two sheets skip themselves. The lightbox stays outside the sheets
+     (a transformed ancestor would break its position: fixed). */
+  const sheetHost = document.querySelector(
+    "body.home main.home-sections, main.services-page, main.relacing-page, main.about-page"
+  );
+  let sheetStarts = [];
+  if (sheetHost && body.classList.contains("home")) {
+    const heroEl = document.querySelector("body.home .hero");
+    if (heroEl) sheetHost.prepend(heroEl); // keep every sheet in one containing block
+    sheetStarts = [heroEl, sheetHost.querySelector(".home-trust-cues"), ...sheetHost.querySelectorAll(":scope > .home-section, :scope > .mm-final-cta")];
+  } else if (sheetHost) {
+    const first = sheetHost.firstElementChild;
+    sheetStarts = [first, ...Array.from(sheetHost.querySelectorAll(":scope > section")).filter((sec) => sec !== first)];
+    // The first section rides with the intro above it.
+    if (sheetStarts[1] && sheetStarts[1].previousElementSibling === first) sheetStarts.splice(1, 1);
+  }
+  sheetStarts = sheetStarts.filter(Boolean);
+  if (sheetStarts.length > 1) {
+    const sheets = sheetStarts.map((start, i) => {
       const sheet = document.createElement("div");
       sheet.className = "fx-sheet";
       start.before(sheet);
       let node = start;
-      while (node && node !== starts[i + 1] && !(node.classList && node.classList.contains("lightbox"))) {
+      while (node && node !== sheetStarts[i + 1] && !(node.classList && node.classList.contains("lightbox"))) {
         const next = node.nextElementSibling;
         sheet.appendChild(node);
         node = next;
       }
       return sheet;
     });
-    main.classList.add("fx-sheets");
+    sheetHost.classList.add("fx-sheets");
 
     let tops = [];
     const header = () => parseFloat(getComputedStyle(root).getPropertyValue("--headerH")) || 52;
