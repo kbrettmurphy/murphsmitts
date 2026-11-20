@@ -3053,11 +3053,16 @@ html.lenis{ scroll-behavior: auto; }
   position: sticky;
   isolation: isolate;    /* keeps the z-index:-1 surface inside the sheet */
   display: flow-root;    /* contain section margins so the sheet covers them */
-  padding-top: clamp(8px, 1.5vw, 20px);
-  padding-bottom: clamp(64px, 9vw, 128px);
   border-radius: 28px 28px 0 0;
   will-change: transform;
 }
+/* Spacing only on the wrapper sheets fx.js creates, never on the homepage
+   hero itself (its own top padding is what clears the fixed header). */
+.fx-on div.fx-sheet{
+  padding-top: clamp(8px, 1.5vw, 20px);
+  padding-bottom: clamp(64px, 9vw, 128px);
+}
+.fx-on div.fx-sheet.fx-sheet-first{ padding-top: 0; }
 .fx-on .fx-sheet::before,
 .fx-on .fx-sheet::after{
   content: "";
@@ -3075,9 +3080,8 @@ html.lenis{ scroll-behavior: auto; }
   background: rgba(9, 47, 77, .08);
   opacity: var(--fx-cover, 0);
 }
-.fx-on .fx-sheet.fx-sheet-first{ padding-top: 0; border-radius: 0; }
+.fx-on .fx-sheet.fx-sheet-first{ border-radius: 0; }
 .fx-on .fx-sheet.fx-sheet-first::before{ box-shadow: none; }
-.fx-on .hero.fx-sheet{ padding-bottom: 0; }
 /* Homepage: the hero stays pinned beneath the page; fill the gap above the
    footer so it can't show through there. */
 .fx-on body.home .site-footer{
