@@ -2868,22 +2868,21 @@ html.lenis{ scroll-behavior: auto; }
   will-change: transform;
 }
 
-/* Homepage "How it works": stacking cards. As the section scrolls up the
-   screen, cards 2 and 3 rise onto the deck and the ones beneath shrink and
-   dim. No pinning or extra height. fx.js drives transform + --fx-depth.
+/* Homepage "How it works": stacking cards. The steps start as a normal list;
+   as the section scrolls up the screen, cards 2 and 3 slide up over card 1
+   into a deck and the ones beneath shrink and dim. No pinning or extra
+   height. fx.js drives transform + --fx-depth.
    Gated on .fx-on, so reduced motion keeps the original 3-column grid. */
 .fx-on body.home .home-process-grid{
-  display: grid;
-  grid-template-columns: 1fr;
+  display: block;
   max-width: 760px;
 }
 .fx-on body.home .home-process-step{
-  grid-area: 1 / 1;      /* all cards share one cell: a deck */
+  position: relative;    /* later cards paint over earlier ones */
   transform-origin: 50% 0;
   will-change: transform;
 }
-.fx-on body.home .home-process-step:nth-child(2){ margin-top: 16px; }
-.fx-on body.home .home-process-step:nth-child(3){ margin-top: 32px; }
+.fx-on body.home .home-process-step + .home-process-step{ margin-top: 16px; }
 .fx-on body.home .home-process-step > div{
   position: relative;
   display: grid;

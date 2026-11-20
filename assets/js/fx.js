@@ -191,30 +191,40 @@
   }
 
   /* ---------- 5. Stacking cards (homepage "How it works") ----------
-     No pinning: progress comes from where the deck sits in the viewport.
-     p = 0 once the whole deck is on screen (top at 75%), 1 when it reaches
-     ~30% from the top. Later cards rise onto the deck in turn; cards beneath
-     get --fx-depth (0 → n) so they shrink and dim. */
+     The steps start as a normal list. As the deck's top travels from 62% to
+     22% of the viewport, card 2 then card 3 slide up over card 1 (landing
+     16px apart), tracking the scroll 1:1 (no front-loaded easing). Cards
+     beneath get --fx-depth (0 → n) so they shrink and dim. The link under
+     the deck follows the last card so no gap opens above it. */
   const deck = document.querySelector("body.home .home-process-grid");
   const stack = deck ? Array.from(deck.querySelectorAll(".home-process-step")) : [];
+  const follower = deck && deck.nextElementSibling && deck.nextElementSibling.matches(".home-actions") ? deck.nextElementSibling : null;
+  if (follower) follower.classList.add("fx-done"); // moves with the deck, not the reveal
   if (stack.length > 1) {
     const n = stack.length;
+    const PEEK = 16;
     const clamp = (v) => Math.min(1, Math.max(0, v));
-    const ease = (t) => 1 - Math.pow(1 - t, 3);
+    const smooth = (t) => t * t * (3 - 2 * t); // gentle in/out at each card's ends only
+    let shift = [];
+    const measure = () => {
+      // offsetTop ignores transforms, so this is the natural list layout.
+      const base = stack[0].offsetTop;
+      shift = stack.map((el, i) => el.offsetTop - base - i * PEEK);
+    };
     let stackQueued = false;
     const paintStack = () => {
       stackQueued = false;
       const r = deck.getBoundingClientRect();
-      if (r.bottom < -200 || r.top > innerHeight + 200) return;
-      const p = clamp((innerHeight * 0.75 - r.top) / (innerHeight * 0.45));
-      const e = stack.map((_, i) => (i === 0 ? 1 : ease(clamp((p / 0.9) * (n - 1) - (i - 1)))));
+      if (r.bottom < -400 || r.top > innerHeight + 400) return;
+      const p = clamp((innerHeight * 0.62 - r.top) / (innerHeight * 0.4));
+      const e = stack.map((_, i) => (i === 0 ? 0 : smooth(clamp(p * (n - 1) - (i - 1)))));
       stack.forEach((el, i) => {
         let depth = 0;
         for (let j = i + 1; j < n; j++) depth += e[j];
-        el.style.transform = `translate3d(0, ${((1 - e[i]) * 64).toFixed(1)}px, 0) scale(${(1 - depth * 0.05).toFixed(4)})`;
-        el.style.opacity = i === 0 ? "" : clamp(e[i] * 1.6).toFixed(3);
+        el.style.transform = `translate3d(0, ${(-shift[i] * e[i]).toFixed(1)}px, 0) scale(${(1 - depth * 0.05).toFixed(4)})`;
         el.style.setProperty("--fx-depth", depth.toFixed(3));
       });
+      if (follower) follower.style.transform = `translate3d(0, ${(-shift[n - 1] * e[n - 1]).toFixed(1)}px, 0)`;
     };
     const queueStack = () => {
       if (stackQueued) return;
@@ -222,7 +232,8 @@
       requestAnimationFrame(paintStack);
     };
     addEventListener("scroll", queueStack, { passive: true });
-    addEventListener("resize", queueStack);
+    addEventListener("resize", () => { measure(); queueStack(); });
+    measure();
     paintStack();
   }
 
